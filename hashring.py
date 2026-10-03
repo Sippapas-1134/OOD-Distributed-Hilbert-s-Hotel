@@ -33,13 +33,25 @@ hashring.py
 - ทดสอบกรณีจุดชนกัน
 """
 
+"""
+ไม่แน่
+                    worse       avg         expect
+hash_to_position    O(1)        O(1)        O(1)
+add_node            O(NV²)      O(NV²)      O(NV²)
+remove_node         O(N + M)    O(M)        O(M)
+get_owner           O(log M)    O(log M)    O(log M)
+get_owner_of_guest  O(log M)    O(log M)    O(log M)
+node_count          O(1)        O(1)        O(1)
+point_count         O(1)        O(1)        O(1)
+"""
+
 import hashlib
 from bisect import bisect_left, insort
 
 RING_SIZE = 2 ** 64
 
 
-def hash_to_position(key: str) -> int:
+def hash_to_position(key: str) -> int:  #O(1)
     """
     แปลงข้อความ (string) เป็นตำแหน่งบนวงแหวน 0 .. 2**64 - 1
     ใช้ SHA-256 แล้วตัดมา 64 บิตแรก (8 ไบต์แรก) ตามที่กติกากำหนด
@@ -49,44 +61,55 @@ def hash_to_position(key: str) -> int:
         h = hashlib.sha256(key.encode("utf-8")).digest()
         return int.from_bytes(h[:8], byteorder="big")
     """
-    # TODO(คนที่ 1): implement ตามที่ระบุไว้ใน docstring ด้านบน
-    raise NotImplementedError
 
+    h = hashlib.sha256(key.encode("utf-8")).digest()  #hash ด้วย SHA-256 แล้วแปลงเป็น bytes
+    return int.from_bytes(h[:8], byteorder="big") #เอาแค่ 8 bytes แรก (64 bits) ของ hash มาแปลงเป็น int เรียงแบบ big-endian
 
 class HashRing:
-    """
-    วงแหวนสำหรับ Consistent Hashing
-
-    self.points: list ของ tuple (position, node_id, j) เรียงตาม (position, node_id, j)
-                 ใช้เก็บ virtual node ทุกจุดของทุกอาคาร
-    self.nodes:  set ของ node_id ที่มีอยู่ในระบบ ใช้เช็คซ้ำ/มีอยู่จริงแบบเร็ว O(1)
-    """
 
     def __init__(self, num_virtual_nodes_per_building: int):
         self.v = num_virtual_nodes_per_building
-        self.points: list[tuple[int, str, int]] = []  # เรียงลำดับเสมอ
-        self.nodes: set[str] = set()
+        self.points: list[tuple[int, str, int]] = []  #เก็บจุดทั้งหมด(len(self.points) == M) ประกอบด้วย position(key ที่ผ่านการ hash),node_id,j
+        self.nodes: set[str] = set() #เก็บอาคาร(node_id) len(self.nodes) == N
 
-    def add_node(self, node_id: str) -> bool:
+    def add_node(self, node_id: str) -> bool:   #O(V) -> O(NV^2)
         """
         เพิ่มอาคาร node_id พร้อม virtual node ทั้ง V จุด
         คืนค่า True ถ้าเพิ่มสำเร็จ, False ถ้า node_id มีอยู่แล้ว (ปฏิเสธการเพิ่ม)
         ต้องแทรกจุดใหม่โดยรักษาลำดับของ self.points ไว้เสมอ (ใช้ insort หรือ bisect_left เอง)
         """
-        # TODO(คนที่ 1)
-        raise NotImplementedError
 
-    def remove_node(self, node_id: str) -> bool:
+        if node_id not in self.nodes: #ตรวจสอบว่าเคยมี node_id นี้หรือไม่ 
+            self.nodes.add(node_id)
+        else:
+            return False
+
+        #add position node_id and j
+        for j in range(self.v):     # O(v)
+            position = hash_to_position(f"node:{node_id}:{j}")
+            point = (position, node_id, j)
+            insort(self.points,point) # O(M)
+
+        return True
+
+    def remove_node(self, node_id: str) -> bool: #O(N+M)
         """
         ลบอาคาร node_id พร้อม virtual node ทั้งหมดของอาคารนั้น
         คืนค่า True ถ้าลบสำเร็จ
         คืนค่า False ถ้า node_id ไม่มีอยู่จริง หรือถ้าลบแล้วจะไม่เหลืออาคารเลย (N >= 1)
         ห้ามเปลี่ยนตำแหน่งจุดของอาคารอื่นที่เหลืออยู่
         """
-        # TODO(คนที่ 1)
-        raise NotImplementedError
 
-    def get_owner(self, position: int) -> str | None:
+        if node_id in self.nodes and len(self.nodes)>1:
+            self.nodes.remove(node_id)  #O(N)
+
+            #ลบตัวที่มี node_id
+            self.points = [i for i in self.points if i[1]!=node_id] #O(M)
+            return True
+        else:
+            return False
+
+    def get_owner(self, position: int) -> str | None: #O(log M)
         """
         หา node_id ที่เป็นเจ้าของตำแหน่ง position
         กติกา: จุดแรกที่ position(จุด) >= position(แขก) ถ้าไม่มีให้วนกลับจุดแรกของวงแหวน (index 0)
@@ -94,20 +117,33 @@ class HashRing:
         แนะนำใช้ bisect_left บน list ของ position ล้วน ๆ (แยกเก็บหรือ derive ทุกครั้งก็ได้
         แต่ให้คำนึงถึง Big-O ตามที่จะวิเคราะห์ในรายงาน)
         """
-        # TODO(คนที่ 1)
-        raise NotImplementedError
 
-    def get_owner_of_guest(self, c: int, s: int) -> str | None:
+        if self.node_count == 0:
+            return None
+
+        #หา position ของจุดที่ >= position ของ gusest
+        index = bisect_left(self.points,(position,0,0)) # O(log M)
+
+        if index == self.point_count:
+            return self.points[0]
+        
+        return self.points[index]
+
+    def get_owner_of_guest(self, c: int, s: int) -> str | None: #O(log M)
         """
         คำนวณตำแหน่งของแขกจาก (c, s) ด้วย hash_to_position("guest:c:s")
         แล้วเรียก get_owner() ต่อ
         """
-        # TODO(คนที่ 1)
-        raise NotImplementedError
 
+        position = hash_to_position(f"guest:{c}:{s}")   #O(1)
+        return self.get_owner(position) #O(log M)
+
+    # จำนวนอาคาร N
     def node_count(self) -> int:
         return len(self.nodes)
 
+    #จำนวนจุด M = N x V
     def point_count(self) -> int:
         """จำนวนจุดทั้งหมดบนวงแหวน = M = N * V"""
+
         return len(self.points)
