@@ -129,14 +129,6 @@ python -c "import experiments; experiments.run_experiment_A([1000, 10000, 100000
   ผู้เรียกต้องใช้ `[1]` เพื่อเอา node_id
 - `node_count()` = N, `point_count()` = M = N x V (เป็นเมธอด ต้องเรียกด้วย `()`)
 
-**บั๊กที่เทสเจอใน `get_owner` (ต้องแก้ใน hashring.py ก่อน เทสจึงจะผ่านครบ 25 ข้อ)**
-
-1. `self.node_count == 0` ต้องเป็น `self.node_count() == 0` (ไม่มี `()` เงื่อนไขจะไม่เป็นจริงเลย)
-2. `index == self.point_count` ต้องเป็น `index == self.point_count()`
-   (ของเดิมทำให้กรณีวนกลับต้นวงแหวน เช่น ตำแหน่ง 90 เกิด `IndexError`)
-3. `bisect_left(self.points, (position, 0, 0))` ต้องเป็น `(position, "", -1)`
-   (ของเดิมเทียบ `str` กับ `int` เมื่อตำแหน่งชนกัน เกิด `TypeError`)
-
 **ข้อสังเกตเล็กน้อย (ไม่กระทบความถูกต้อง)**
 - `set.remove` เป็น O(1) ดังนั้น `remove_node` รวมแล้วเป็น O(M) ไม่ใช่ O(N + M)
 - ควรแก้ type hint ของ `get_owner` / `get_owner_of_guest` ให้ตรงกับที่คืนจริง
