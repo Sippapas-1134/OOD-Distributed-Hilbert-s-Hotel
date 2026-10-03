@@ -2,63 +2,37 @@
 guest.py
 งานของ: คนที่ 2 -- ข้อมูลแขกและเลขห้อง (Guest / Room / ดัชนีค้นหา)
 
-หน้าที่ที่ต้องทำ (ดูกติกาในโจทย์ หัวข้อ 4.1, 4.2):
-1. ฟังก์ชัน compute_room_no(c, s) คำนวณเลขห้องจาก Cantor pairing function
-   ตามสูตรที่โจทย์กำหนด (a = c-1, b = s-1):
-     room_no = ((a+b)*(a+b+1))//2 + b + 1
-   ต้องคำนวณด้วยจำนวนเต็มล้วน ห้ามแปลงเป็นทศนิยม (ใช้ // เท่านั้น)
-   ตรวจกับตารางตัวอย่างในโจทย์:
-     (1,1)->1  (2,1)->2  (1,2)->3  (3,1)->4  (2,2)->5
+- compute_room_no(c, s): Cantor pairing function ด้วยจำนวนเต็มล้วน
+- GuestRegistry: เก็บแขกทั้งหมด + ดัชนีสองทาง
+    by_guest_code : (c, s)             -> GuestRecord
+    by_address    : (node_id, room_no) -> (c, s)
+  ทุกเมธอดที่แก้ข้อมูลต้องอัปเดตทั้งสอง dict ให้สอดคล้องกันเสมอ
 
-2. คลาส GuestRegistry เก็บข้อมูลแขกทั้งหมดในระบบ และดัชนีค้นหาสองทาง:
-     - self.by_guest_code : dict[(c, s)] -> {"node_id": ..., "room_no": ...}
-     - self.by_address    : dict[(node_id, room_no)] -> (c, s)
-   ต้องดูแลให้ทั้งสอง dict สอดคล้องกันเสมอ (เพิ่ม/ลบ/ย้าย ต้องอัปเดตทั้งคู่)
-
-3. add_guest(c, s, node_id) : เพิ่มแขกคนเดียว
-   - ปฏิเสธถ้า (c, s) มีอยู่แล้ว (return False พร้อมเหตุผล ไม่ throw exception)
-   - คำนวณ room_no จาก compute_room_no แล้วบันทึกทั้งสอง dict
-
-4. add_guests_batch(c, s_start, count, node_id_lookup_fn):
-   - เพิ่มแขกเป็นกลุ่ม: รหัส c เดียวกัน ลำดับเริ่ม s_start ถึง s_start+count-1
-   - count ต้องเป็นจำนวนเต็มไม่ติดลบ (0 = ไม่ทำอะไรเลย)
-   - ถ้ามีรายการใดรายการหนึ่งในกลุ่มชนกับแขกที่มีอยู่แล้ว -> ปฏิเสธ "ทั้งกลุ่ม"
-     (ห้ามเพิ่มบางส่วน) และคงข้อมูลเดิมไว้ทั้งหมด
-   - node_id_lookup_fn: ฟังก์ชันที่ hotel_system.py ส่งเข้ามาเพื่อถามว่าคนนี้ควรอยู่อาคารไหน
-     (เพราะการเลือกอาคารเป็นหน้าที่ของ HashRing ไม่ใช่ของไฟล์นี้)
-
-5. remove_guest(c, s): ลบแขกออก (ลบข้อมูลการเข้าพัก ไม่ต้องสร้างห้องว่างแทน)
-   - ถ้าไม่พบ ให้คืนค่า False พร้อมข้อความแจ้ง ไม่ throw exception
-   - ถ้าเพิ่มรหัสเดิมกลับมาใหม่ทีหลัง ให้ถือเป็นแขกใหม่ (คำนวณจากวงแหวนปัจจุบัน
-     ผ่าน add_guest ตามปกติ ไม่ต้องมี logic พิเศษในไฟล์นี้)
-
-6. find_by_guest_code(c, s) -> คืน (node_id, room_no) หรือ None ถ้าไม่พบ
-   find_by_address(node_id, room_no) -> คืน (c, s) หรือ None ถ้าไม่พบ
-
-7. update_node_of_guest(c, s, new_node_id): ใช้ตอนแขกย้ายอาคาร (เรียกจาก hotel_system.py
-   ตอนเพิ่ม/ลบอาคาร) -- room_no ต้องคงเดิม เปลี่ยนแค่ node_id
-   ต้องอัปเดตทั้ง by_guest_code และ by_address (ลบ address เก่า ใส่ address ใหม่)
-
-8. list_guests_in_building(node_id) -> list ของ (room_no, c, s) เรียงตาม room_no
-   (ใช้ตอนคนที่ 5 ทำฟังก์ชันแสดงรายการห้อง)
-
-ทดสอบที่ต้องเขียน (tests/test_guest.py):
-- ตรวจเลขห้องตามตารางตัวอย่างในโจทย์
-- ตรวจว่ารหัสแขกต่างกัน ไม่เคยได้ room_no ซ้ำกัน (สุ่มทดสอบจำนวนมาก)
-- ปฏิเสธรหัสซ้ำ ทั้งแบบเดี่ยวและแบบกลุ่ม (batch ที่ซ้ำแค่ 1 รายการ ต้องถูกปฏิเสธทั้งกลุ่ม)
-- ลบแขกที่ไม่มีอยู่ -> ไม่ throw exception, คืนค่า False
+หมายเหตุ: ไฟล์นี้ไม่รู้จัก HashRing เลย การเลือกอาคารเป็นหน้าที่ของ hotel_system.py
+ซึ่งต้องส่ง node_id_lookup_fn(c, s) -> node_id (str) เข้ามา
+(HashRing.get_owner คืน tuple (position, node_id, j) ดังนั้นฝั่ง hotel_system
+ต้องหยิบเฉพาะ node_id ออกมาก่อนส่งเข้ามา เช่น lambda c, s: ring.get_owner_of_guest(c, s)[1])
 """
 
 from dataclasses import dataclass
+
+
+def _is_pos_int(x) -> bool:
+    # bool เป็น subclass ของ int จึงต้องกันออกเอง
+    return isinstance(x, int) and not isinstance(x, bool) and x >= 1
 
 
 def compute_room_no(c: int, s: int) -> int:
     """
     คำนวณเลขห้องจากรหัสแขก (c, s) ด้วย Cantor pairing function
     c, s เป็นจำนวนเต็มบวก (เริ่มที่ 1)
+    ตัวอย่าง: (1,1)->1  (2,1)->2  (1,2)->3  (3,1)->4  (2,2)->5
     """
-    # TODO(คนที่ 2): a = c - 1, b = s - 1 แล้วคำนวณตามสูตรในโจทย์ ด้วยจำนวนเต็มล้วน
-    raise NotImplementedError
+    if not _is_pos_int(c) or not _is_pos_int(s):
+        raise ValueError(f"c และ s ต้องเป็นจำนวนเต็มบวก (ได้ c={c!r}, s={s!r})")
+    a = c - 1
+    b = s - 1
+    return ((a + b) * (a + b + 1)) // 2 + b + 1
 
 
 @dataclass
@@ -74,13 +48,18 @@ class GuestRegistry:
         self.by_guest_code: dict[tuple[int, int], GuestRecord] = {}
         self.by_address: dict[tuple[str, int], tuple[int, int]] = {}
 
+    # ---------- เพิ่ม ----------
     def add_guest(self, c: int, s: int, node_id: str) -> tuple[bool, str]:
         """
         คืน (True, "") ถ้าสำเร็จ
         คืน (False, เหตุผล) ถ้าปฏิเสธ เช่น "(c,s) ซ้ำกับแขกที่มีอยู่แล้ว"
         """
-        # TODO(คนที่ 2)
-        raise NotImplementedError
+        if not _is_pos_int(c) or not _is_pos_int(s):
+            return False, f"รหัสแขก ({c!r},{s!r}) ไม่ถูกต้อง: c และ s ต้องเป็นจำนวนเต็มบวก"
+        if (c, s) in self.by_guest_code:
+            return False, f"({c},{s}) ซ้ำกับแขกที่มีอยู่แล้ว"
+        self._insert(c, s, node_id)
+        return True, ""
 
     def add_guests_batch(
         self, c: int, s_start: int, count: int, node_id_lookup_fn
@@ -89,34 +68,84 @@ class GuestRegistry:
         node_id_lookup_fn(c, s) -> node_id  (เรียกเพื่อถามว่าแขกคนนี้อยู่อาคารไหน)
         คืน (True, "", รายชื่อ (c,s) ที่เพิ่มสำเร็จ) หรือ (False, เหตุผล, [])
         ถ้า count == 0 ให้คืน (True, "ไม่มีการเปลี่ยนแปลง", [])
-        ต้องตรวจสอบ "ทั้งกลุ่ม" ว่าไม่มีใครซ้ำ ก่อนจะเริ่มเพิ่มจริงแม้แต่คนเดียว
+        ตรวจ "ทั้งกลุ่ม" ก่อน แล้วค่อยเพิ่มจริง (all-or-nothing)
         """
-        # TODO(คนที่ 2)
-        raise NotImplementedError
+        if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+            return False, f"count ต้องเป็นจำนวนเต็มไม่ติดลบ (ได้ {count!r})", []
+        if count == 0:
+            return True, "ไม่มีการเปลี่ยนแปลง", []
+        if not _is_pos_int(c) or not _is_pos_int(s_start):
+            return False, f"c={c!r}, s_start={s_start!r} ต้องเป็นจำนวนเต็มบวก", []
 
+        codes = [(c, s) for s in range(s_start, s_start + count)]
+
+        # 1) ตรวจซ้ำทั้งกลุ่มก่อน
+        dups = [code for code in codes if code in self.by_guest_code]
+        if dups:
+            shown = ", ".join(f"({a},{b})" for a, b in dups[:5])
+            more = f" และอีก {len(dups) - 5} รายการ" if len(dups) > 5 else ""
+            return False, f"ปฏิเสธทั้งกลุ่ม: ซ้ำกับแขกที่มีอยู่แล้ว {shown}{more}", []
+
+        # 2) ถาม node_id ของทุกคนก่อนแก้ข้อมูล
+        #    (ถ้า lookup ล้มเหลวกลางทาง registry จะยังไม่ถูกแก้เลย)
+        try:
+            plan = [(cc, ss, node_id_lookup_fn(cc, ss)) for cc, ss in codes]
+        except Exception as e:  # noqa: BLE001
+            return False, f"หาอาคารของแขกไม่สำเร็จ ไม่มีการเปลี่ยนแปลง: {e}", []
+
+        # 3) เพิ่มจริง
+        for cc, ss, nid in plan:
+            self._insert(cc, ss, nid)
+        return True, "", codes
+
+    def _insert(self, c: int, s: int, node_id: str) -> None:
+        room_no = compute_room_no(c, s)
+        self.by_guest_code[(c, s)] = GuestRecord(c, s, node_id, room_no)
+        self.by_address[(node_id, room_no)] = (c, s)
+
+    # ---------- ลบ ----------
     def remove_guest(self, c: int, s: int) -> tuple[bool, str]:
-        # TODO(คนที่ 2)
-        raise NotImplementedError
+        rec = self.by_guest_code.pop((c, s), None)
+        if rec is None:
+            return False, f"ไม่พบแขก ({c},{s})"
+        self.by_address.pop((rec.node_id, rec.room_no), None)
+        return True, ""
 
+    # ---------- ค้นหา ----------
     def find_by_guest_code(self, c: int, s: int):
         """คืน (node_id, room_no) หรือ None"""
-        # TODO(คนที่ 2)
-        raise NotImplementedError
+        rec = self.by_guest_code.get((c, s))
+        if rec is None:
+            return None
+        return rec.node_id, rec.room_no
 
     def find_by_address(self, node_id: str, room_no: int):
         """คืน (c, s) หรือ None"""
-        # TODO(คนที่ 2)
-        raise NotImplementedError
+        return self.by_address.get((node_id, room_no))
 
+    # ---------- ย้ายอาคาร ----------
     def update_node_of_guest(self, c: int, s: int, new_node_id: str) -> None:
-        """ใช้ตอนย้ายอาคาร room_no คงเดิม เปลี่ยนแค่ node_id เรียกจากตอนเพิ่ม/ลบอาคาร"""
-        # TODO(คนที่ 2)
-        raise NotImplementedError
+        """ใช้ตอนย้ายอาคาร room_no คงเดิม เปลี่ยนแค่ node_id เรียกจากตอนเพิ่ม/ลบอาคาร
+        ถ้าไม่พบแขกจะ raise KeyError (เป็นความผิดพลาดของผู้เรียก ไม่ควรเกิดในการใช้งานปกติ)"""
+        rec = self.by_guest_code.get((c, s))
+        if rec is None:
+            raise KeyError(f"ไม่พบแขก ({c},{s})")
+        if rec.node_id == new_node_id:
+            return
+        self.by_address.pop((rec.node_id, rec.room_no), None)
+        rec.node_id = new_node_id
+        self.by_address[(new_node_id, rec.room_no)] = (c, s)
 
+    # ---------- รายการ ----------
     def list_guests_in_building(self, node_id: str) -> list[tuple[int, int, int]]:
         """คืน list ของ (room_no, c, s) เรียงตาม room_no จากน้อยไปมาก"""
-        # TODO(คนที่ 2)
-        raise NotImplementedError
+        result = [
+            (room_no, c, s)
+            for (nid, room_no), (c, s) in self.by_address.items()
+            if nid == node_id
+        ]
+        result.sort()
+        return result
 
     def guest_count(self) -> int:
         return len(self.by_guest_code)

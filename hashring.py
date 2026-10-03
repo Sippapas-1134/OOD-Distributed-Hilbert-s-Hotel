@@ -118,13 +118,13 @@ class HashRing:
         แต่ให้คำนึงถึง Big-O ตามที่จะวิเคราะห์ในรายงาน)
         """
 
-        if self.node_count == 0:
+        if self.node_count() == 0:
             return None
 
         #หา position ของจุดที่ >= position ของ gusest
-        index = bisect_left(self.points,(position,0,0)) # O(log M)
+        index = bisect_left(self.points,(position, "", -1)) # O(log M)
 
-        if index == self.point_count:
+        if index == self.point_count():
             return self.points[0]
         
         return self.points[index]
