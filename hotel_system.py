@@ -78,33 +78,35 @@ class HotelSystem:
     def add_guest(self, c: int, s: int) -> tuple[bool, str]:
         """เพิ่มแขกคนเดียว คำนวณอาคารจากวงแหวนปัจจุบัน"""
         # TODO(คนที่ 5): เรียก self.ring.get_owner_of_guest(c, s) แล้วส่งต่อ registry.add_guest
-        raise NotImplementedError
+        node_id = self.ring.get_owner_of_guest(c, s)
+        return self.registry.add_guest(c, s, node_id)
+
 
     def add_guests_batch(self, c: int, s_start: int, count: int) -> tuple[bool, str, list]:
         # TODO(คนที่ 5): เรียก registry.add_guests_batch โดยส่ง lookup_fn ที่ใช้ ring
-        raise NotImplementedError
+        return self.registry.add_guests_batch(c, s_start, count, self.ring.get_owner_of_guest)
 
     def remove_guest(self, c: int, s: int) -> tuple[bool, str]:
         # TODO(คนที่ 5)
-        raise NotImplementedError
+        return self.registry.remove_guest(c, s)
 
-    def find_by_guest(self, c: int, s: int):
+    def find_by_guest(self, c: int, s: int) -> (tuple[str, int] | None):
         # TODO(คนที่ 5)
-        raise NotImplementedError
+        return self.registry.find_by_guest_code(c, s)
 
     def find_by_address(self, node_id: str, room_no: int):
         # TODO(คนที่ 5)
-        raise NotImplementedError
+        return self.registry.find_by_address(node_id, room_no)
 
     # ---------- ส่วนอาคาร (เรียก rebalance.py ของคนที่ 3) ----------
 
     def add_building(self, node_id: str):
         # TODO(คนที่ 5): return rebalance.add_building(self.ring, self.registry, node_id)
-        raise NotImplementedError
+        return rebalance.add_building(self.ring, self.registry, node_id)
 
     def remove_building(self, node_id: str):
         # TODO(คนที่ 5): return rebalance.remove_building(self.ring, self.registry, node_id)
-        raise NotImplementedError
+        return rebalance.remove_building(self.ring, self.registry, node_id)
 
     # ---------- รายงาน ----------
 
@@ -112,7 +114,12 @@ class HotelSystem:
         """คืน list ของ (node_id, room_no, c, s) เรียง node_id แล้วเรียง room_no"""
         # TODO(คนที่ 5): วนทุก node_id ใน self.ring.nodes (เรียงลำดับ) แล้วเรียก
         # self.registry.list_guests_in_building(node_id) ต่อ
-        raise NotImplementedError
+        nodes = self.ring.nodes
+        return_list = []
+        for node_id in nodes:
+            for data in self.registry.list_guests_in_building(node_id):
+                return_list.append((node_id, *data))
+        return return_list
 
     def load_balance_report(self) -> dict:
         """
