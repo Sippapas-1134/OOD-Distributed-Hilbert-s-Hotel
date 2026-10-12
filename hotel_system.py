@@ -138,7 +138,15 @@ class HotelSystem:
     def export_guests_csv(self, path: str) -> None:
         """คอลัมน์: channel_id, sequence_id, node_id, room_no (UTF-8)"""
         # TODO(คนที่ 5)
-        raise NotImplementedError
+        header = ("channel_id", "sequence_id", "node_id", "room_no")
+        data = [header]
+        for room_data in self.list_occupied_rooms():
+            swap_data = (room_data[2], room_data[3], room_data[0], room_data[1])
+            data.append(swap_data)
+
+        with open(path, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
 
     def export_migrations_csv(self, path: str, migration_report) -> None:
         """คอลัมน์: c, s, old_node_id, new_node_id, room_no"""
@@ -162,6 +170,24 @@ def run_cli():
         if choice == "0":
             print("ออกจากโปรแกรม")
             break
+        if choice == "1":
+            pass
+        if choice == "2":
+            pass
+        if choice == "3":
+            pass
+        if choice == "4":
+            pass
+        if choice == "5":
+            pass
+        if choice == "6":
+            pass
+        if choice == "7":
+            pass
+        if choice == "8":
+            pass
+        if choice == "9":
+            pass
         # TODO(คนที่ 5): เติม logic ของแต่ละเมนู เรียกใช้ HotelSystem ด้านบน
         # ทุกกรณีต้อง try/except หรือตรวจ input ก่อน ไม่ปล่อยให้โปรแกรม crash
         print("(ยังไม่ implement เมนูนี้)")

@@ -19,7 +19,7 @@ class TestHotelSystemBasicFlow(unittest.TestCase):
 
     def test_existing_guest_address_unchanged_after_new_guest(self):
         """เพิ่มแขกใหม่แล้ว ที่อยู่ห้องของแขกเดิมต้องไม่เปลี่ยนแม้แต่คนเดียว"""
-        pass
+        prev_rooms = []
 
     def test_room_number_matches_formula(self):
         pass
