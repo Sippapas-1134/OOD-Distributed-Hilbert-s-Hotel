@@ -75,17 +75,101 @@ class MigrationReport:
     moves: list[MigrationRecord] = field(default_factory=list)
 
 
+# M = N*V, K = แขกทั้งหมด, R = ผู้ย้าย; ถือว่ารหัสมีขนาดคงที่ และ dict/set เฉลี่ย O(1)
+# a) ปรับวงแหวน: O(V*M) (แทรก V จุด; N >= 1 จึง M + V <= 2M)
+# b) หาแขกที่ได้รับผลกระทบ: O(K*log(M+1))
+# c) อัปเดตดัชนี: O(1) เฉลี่ยต่อคน รวม O(R)
 def add_building(ring, registry, node_id: str) -> MigrationReport:
     """
     ring: instance ของ hashring.HashRing (คนที่ 1)
     registry: instance ของ guest.GuestRegistry (คนที่ 2)
     node_id: รหัสอาคารใหม่ที่จะเพิ่ม
     """
-    # TODO(คนที่ 3): ทำตามขั้นตอน 1) ใน docstring ด้านบน
-    raise NotImplementedError
+
+    total_guests = registry.guest_count()
+
+    if not ring.add_node(node_id):
+        return MigrationReport(
+            accepted=False,
+            reason="Building already exists",
+            moved_count=0,
+            move_rate=0.0 if total_guests > 0 else None,
+        )
+
+    moves = []
+    for c, s in registry.all_guest_codes():
+        old_node_id, room_no = registry.find_by_guest_code(c, s)
+        new_node_id = ring.get_owner_of_guest(c, s)[1]
+
+        if new_node_id != old_node_id:
+            registry.update_node_of_guest(c, s, new_node_id)
+            moves.append(MigrationRecord(
+                c=c,
+                s=s,
+                old_node_id=old_node_id,
+                new_node_id=new_node_id,
+                room_no=room_no,
+            ))
+
+    moved_count = len(moves)
+    return MigrationReport(
+        accepted=True,
+        reason=f"Building {node_id} added",
+        moved_count=moved_count,
+        move_rate=moved_count / total_guests if total_guests > 0 else None,
+        moves=moves,
+    )
 
 
+# a) ปรับวงแหวน: O(M)
+# b) หาแขก: O(K + R*log(R+1) + R*log(M+1)) (สแกนทั้งหมด เรียง และหาอาคารใหม่)
+# c) อัปเดตดัชนี: O(1) เฉลี่ยต่อคน รวม O(R)
 def remove_building(ring, registry, node_id: str) -> MigrationReport:
     """เหมือน add_building แต่เป็นการลบอาคาร ดูขั้นตอน 2) ใน docstring ด้านบน"""
-    # TODO(คนที่ 3): ทำตามขั้นตอน 2) ใน docstring ด้านบน
-    raise NotImplementedError
+
+    total_guests = registry.guest_count()
+    if node_id not in ring.nodes:
+        return MigrationReport(
+            accepted=False,
+            reason="Building not found",
+            moved_count=0,
+            move_rate=0.0 if total_guests > 0 else None,
+        )
+    if ring.node_count() == 1:
+        return MigrationReport(
+            accepted=False,
+            reason="Cannot remove the last building",
+            moved_count=0,
+            move_rate=0.0 if total_guests > 0 else None,
+        )
+
+    guests_to_move = registry.list_guests_in_building(node_id)
+
+    if not ring.remove_node(node_id):
+        return MigrationReport(
+            accepted=False,
+            reason="Cannot remove building",
+            moved_count=0,
+            move_rate=0.0 if total_guests > 0 else None,
+        )
+
+    moves = []
+    for room_no, c, s in guests_to_move:
+        new_node_id = ring.get_owner_of_guest(c, s)[1]
+        registry.update_node_of_guest(c, s, new_node_id)
+        moves.append(MigrationRecord(
+            c=c,
+            s=s,
+            old_node_id=node_id,
+            new_node_id=new_node_id,
+            room_no=room_no,
+        ))
+
+    moved_count = len(moves)
+    return MigrationReport(
+        accepted=True,
+        reason=f"Building {node_id} removed",
+        moved_count=moved_count,
+        move_rate=moved_count / total_guests if total_guests > 0 else None,
+        moves=moves,
+    )
