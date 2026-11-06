@@ -10,7 +10,7 @@
 |---|---|---|---|
 | `hashring.py` | คนที่ 1 | วงแหวน Consistent Hashing, การเลือกอาคาร | เสร็จ ผ่านเทส |
 | `guest.py` | คนที่ 2 | ข้อมูลแขก, คำนวณเลขห้อง (Cantor pairing), ดัชนีค้นหา | เสร็จ ผ่านเทส |
-| `rebalance.py` | คนที่ 3 | เพิ่ม/ลบอาคาร, คำนวณและบันทึกการย้ายแขก | |
+| `rebalance.py` | คนที่ 3 | เพิ่ม/ลบอาคาร, คำนวณและบันทึกการย้ายแขก | เสร็จ ผ่านเทส |
 | `experiments.py` | คนที่ 4 | ทดลอง A/B/C, hash mod N, วัดเวลา/หน่วยความจำ, กราฟ | |
 | `hotel_system.py`, `main.py` | คนที่ 5 | ตัวเชื่อมทุกส่วน (facade), เมนูข้อความ, export CSV | |
 | `test_*.py` | ทุกคน (คนละไฟล์ตามส่วนของตัวเอง) | unit test (`test_guest.py`, `test_hashring.py`, `test_rebalance.py`, `test_hotel_system.py`) | |
