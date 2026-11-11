@@ -73,16 +73,20 @@ class HotelSystem:
                 raise ValueError(f"รหัสอาคารซ้ำในชุดเริ่มต้น: {node_id}")
         self.registry = GuestRegistry()
 
+    def get_node_id_fix(self, c, s):
+        return self.ring.get_owner_of_guest(c, s)[1]
+
     # ---------- ส่วนแขก ----------
 
     def add_guest(self, c: int, s: int) -> tuple[bool, str]:
         """เพิ่มแขกคนเดียว คำนวณอาคารจากวงแหวนปัจจุบัน"""
-        node_id = self.ring.get_owner_of_guest(c, s)
+        node_id = self.get_node_id_fix(c, s)
+        # print(type(node_id), node_id)
         return self.registry.add_guest(c, s, node_id)
 
 
     def add_guests_batch(self, c: int, s_start: int, count: int) -> tuple[bool, str, list]:
-        return self.registry.add_guests_batch(c, s_start, count, self.ring.get_owner_of_guest)
+        return self.registry.add_guests_batch(c, s_start, count, self.get_node_id_fix)
 
     def remove_guest(self, c: int, s: int) -> tuple[bool, str]:
         return self.registry.remove_guest(c, s)
@@ -129,11 +133,11 @@ class HotelSystem:
             "std": 0,
             "cv": None
         }
-        for node_id in self.ring.nodes():
+        for node_id in self.ring.nodes:
             data_dict["per_building"][node_id] = len(self.registry.list_guests_in_building(node_id))
         values = list(data_dict["per_building"].values())
 
-        if len(values) == 0:
+        if sum(values) == 0:
             return False, data_dict, "ไม่มีแขกอยู่ในระบบตอนนี้ ไม่คำนวณสถิติของระบบ" # No guest
         
         data_dict["max"] = max(values)
@@ -157,9 +161,16 @@ class HotelSystem:
             writer = csv.writer(file)
             writer.writerows(data)
 
-    def export_migrations_csv(self, path: str, migration_report) -> None:
+    def export_migrations_csv(self, path: str, migration_report: rebalance.MigrationReport) -> None:
         """คอลัมน์: c, s, old_node_id, new_node_id, room_no"""
-        raise NotImplementedError
+        header = ("c", "s", "old_node_id", "new_node_id", "room_no")
+        data = [header]
+        for record in migration_report.moves:
+            data.append((record.c, record.s, record.old_node_id, record.new_node_id, record.room_no))
+
+        with open(path, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
 
 
 def is_num_more_than_one(num):
@@ -172,6 +183,7 @@ def run_cli():
     """
     print("=== ระบบโรงแรมอนันต์แบบกระจาย (Consistent Hashing) ===")
     system = None
+    migration_report = None
     while True:
         print(
             "\n[1] เริ่มระบบใหม่  [2] เพิ่มแขก  [3] ลบแขก  [4] เพิ่มอาคาร  "
@@ -182,10 +194,10 @@ def run_cli():
             print("ออกจากโปรแกรม")
             break
         elif choice == "1":
-            initial_node_ids = input("ใส่ ID ของอาคารเริ่มต้น (ใส่ได้หลายอาคารใช้ ' ' ขั้นแต่ละ ID): ").strip().split(" ")
+            initial_node_ids = input("ใส่ ID ของอาคารเริ่มต้น (ใส่ได้หลายอาคารใช้ space ขั้นแต่ละ ID): ").strip().split(" ")
             v = input("ใส่จำนวน Virtual Node ต่ออาคาร (ค่า V): ").strip("")
 
-            if is_num_more_than_one(v):
+            if not is_num_more_than_one(v):
                 print("FAILED: ค่า V ต้องเป็นจำนวนเต็มที่ >= 1")
                 continue
 
@@ -199,16 +211,17 @@ def run_cli():
                 print("สร้างระบบสำเร็จ")
         elif choice == "2":
             c = input("ใส่ค่า c ของแขก: ").strip()
-            s = input("ใส่ค่า s ของแขก(s เริ่มต้นหากเป็นแขกหลายคน): ").strip()
-            count = input("ใส่จำนวนแขกที่อยากใส่: ").strip()
-
-            if is_num_more_than_one(c):
+            if not is_num_more_than_one(c):
                 print("FAILED: ค่า c ของแขกต้องเป็นจำนวนเต็ม >= 1")
                 continue
-            elif is_num_more_than_one(s):
+            
+            s = input("ใส่ค่า s ของแขก(s เริ่มต้นหากเป็นแขกหลายคน): ").strip()
+            if not is_num_more_than_one(s):
                 print("FAILED: ค่า s ของแขกต้องเป็นจำนวนเต็ม >= 1")
                 continue
-            elif is_num_more_than_one(count):
+            
+            count = input("ใส่จำนวนแขกที่อยากใส่: ").strip()
+            if not is_num_more_than_one(count):
                 print("FAILED: ค่า count ของแขกต้องเป็นจำนวนเต็ม >= 1")
                 continue
 
@@ -230,12 +243,12 @@ def run_cli():
             else:
                 print(f"เพิ่มลูกค้ารหัส ({c}, {s}) แล้ว")
         elif choice == "3":
-            c, s = input("ใส่ค่า c และ s ของแขกที่อยากลบออก (ใช้ ' ' ขั้นระหว่างสองค่า): ").strip().split(" ")
+            c, s = input("ใส่ค่า c และ s ของแขกที่อยากลบออก (ใช้ space ขั้นระหว่างสองค่า): ").strip().split(" ")
 
-            if is_num_more_than_one(c):
+            if not is_num_more_than_one(c):
                 print("FAILED: ค่า c ของแขกต้องเป็นจำนวนเต็ม >= 1")
                 continue
-            elif is_num_more_than_one(s):
+            elif not is_num_more_than_one(s):
                 print("FAILED: ค่า s ของแขกต้องเป็นจำนวนเต็ม >= 1")
                 continue
 
@@ -252,6 +265,7 @@ def run_cli():
             if not report.accepted:
                 print("FAILED:", report.reason)
                 continue
+            migration_report = report
             print(f"เพิ่มอาคาร ID {node_id} แล้ว")
         elif choice == "5":
             node_id = input("ใส่ ID ของอาคารที่อยากลบ: ").strip()
@@ -259,16 +273,17 @@ def run_cli():
             if not report.accepted:
                 print("FAILED:", report.reason)
                 continue
+            migration_report = report
             print(f"ลบอาคาร ID {node_id} แล้ว")
         elif choice == "6":
-            mode = input("[1] ค้าหาแขกโดยใช้ ID (c, s) ของแขก  [2] ค้นหาแขกโดยใช้เลขห้องของแขก").strip()
+            mode = input("[1] ค้าหาแขกโดยใช้ ID (c, s) ของแขก  [2] ค้นหาแขกโดยใช้เลขห้องของแขก: ").strip()
             if mode == "1":
-                c, s = input("ใส่ค่า c และ s ของแขกที่อยากค้นหา (ใช้ ' ' ขั้นระหว่างสองค่า): ".strip()).split(" ")
+                c, s = input("ใส่ค่า c และ s ของแขกที่อยากค้นหา (ใช้ space ขั้นระหว่างสองค่า): ").strip().split(" ")
 
-                if is_num_more_than_one(c):
+                if not is_num_more_than_one(c):
                     print("FAILED: ค่า c ของแขกต้องเป็นจำนวนเต็ม >= 1")
                     continue
-                elif is_num_more_than_one(s):
+                elif not is_num_more_than_one(s):
                     print("FAILED: ค่า s ของแขกต้องเป็นจำนวนเต็ม >= 1")
                     continue
 
@@ -280,9 +295,9 @@ def run_cli():
                     continue
                 print(f"แขก ID ({c}, {s}) อยู่ที่อาคา {data[0]} ห้อง {data[-1]}")
             elif mode == "2":
-                node_id, room_no = input("ใส่ค่า ID อาคารและเลขห้องของแขกที่อยากค้นหา (ใช้ ' ' ขั้นระหว่างสองค่า): ".strip()).split(" ")
+                node_id, room_no = input("ใส่ค่า ID อาคารและเลขห้องของแขกที่อยากค้นหา (ใช้ space ขั้นระหว่างสองค่า): ").strip().split(" ")
             
-                if is_num_more_than_one(room_no):
+                if not is_num_more_than_one(room_no):
                     print("FAILED: เลขห้องต้องเป็นจำนวนเต็ม >= 1")
                     continue
 
@@ -310,7 +325,7 @@ def run_cli():
                 continue
 
             print("ต่ออาคาร:")
-            for node_id, room_count in data["per_building"]:
+            for node_id, room_count in data["per_building"].items():
                 print(f"    อาคาร {node_id} มีห้อง {room_count} ห้อง")
             print(f"อาคารที่มีห้องมากที่สุดมีทั้งหมด {data["max"]} ห้อง")
             print(f"อาคารที่มีห้องน้อยที่สุดมีทั้งหมด {data["min"]} ห้อง")
@@ -318,8 +333,8 @@ def run_cli():
             print(f"ส่วนเบี่ยงเบนมาตรฐาน: {data["std"]}")
             print(f"cv: {data["cv"]}")
         elif choice == "9":
-            report_type = input("[1] Export ข้อมูลแขก [2] Export ข้อมูลการย้ายตึก").strip()
-            if report_type != "1" or report_type != "2":
+            report_type = input("[1] Export ข้อมูลแขก [2] Export ข้อมูลการย้ายตึก: ").strip()
+            if report_type != "1" and report_type != "2":
                 print("FAILED: ไม่มี Report ประเภทนี้")
 
             path = input("ใส่ Path ที่จะเก็บ CSV (Relative to main.py): ").strip()
@@ -328,8 +343,12 @@ def run_cli():
 
             if report_type == "1":
                 system.export_guests_csv(path)
-            else:
-                pass
+            elif report_type == "2":
+                if migration_report is None:
+                    print("FAILED: ไมมี Migration Report")
+                    continue
+                else:
+                    system.export_migrations_csv(path, migration_report)
             print("เขียนไฟล์ CSV แล้ว")
         else:
             print("FAILED: ไม่มี Option นี้")

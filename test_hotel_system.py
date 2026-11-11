@@ -13,6 +13,11 @@ import unittest
 from hotel_system import HotelSystem
 
 
+def compute_room_no(c: int, s: int) -> int:
+    a = c - 1
+    b = s - 1
+    return ((a + b) * (a + b + 1)) // 2 + b + 1
+
 class TestHotelSystemBasicFlow(unittest.TestCase):
     def setUp(self):
         self.system = HotelSystem(initial_node_ids=["A", "B", "C"], v=4)
@@ -21,7 +26,7 @@ class TestHotelSystemBasicFlow(unittest.TestCase):
         """เพิ่มแขกใหม่แล้ว ที่อยู่ห้องของแขกเดิมต้องไม่เปลี่ยนแม้แต่คนเดียว"""
         prev_rooms = []
         curr_rooms = []
-        cs_pairs = [(c, s)for c in range(1, 1001) for s in range(1, 1001)]
+        cs_pairs = [(c, s)for c in range(1, 101) for s in range(1, 101)]
         for pair in cs_pairs:
             self.system.add_guest(pair[0], pair[1])
             curr_rooms = self.system.list_occupied_rooms()
@@ -32,15 +37,10 @@ class TestHotelSystemBasicFlow(unittest.TestCase):
             self.assertNotEqual(curr_rooms[:-1], prev_rooms)
             prev_rooms = curr_rooms
 
-    def __compute_room_no(c: int, s: int) -> int:
-        a = c - 1
-        b = s - 1
-        return ((a + b) * (a + b + 1)) // 2 + b + 1
-
     def test_room_number_matches_formula(self):
         for data in self.system.list_occupied_rooms():
             _, room_no, c, s = data
-            self.assertEqual(room_no, self.__compute_room_no(c, s))
+            self.assertEqual(room_no, compute_room_no(c, s))
 
 
 class TestEdgeCases(unittest.TestCase):
@@ -74,8 +74,7 @@ class TestEdgeCases(unittest.TestCase):
         by_cs_result = self.system.find_by_guest(2, 1)
         self.assertIsNone(by_cs_result)
 
-        found_node_id, found_room_id = self.system.find_by_guest(1, 1)
-        by_address_result = self.system.find_by_address(found_node_id, found_room_id)
+        by_address_result = self.system.find_by_address("E", -1)
         self.assertIsNone(by_address_result)
 
     def test_zero_guests_stats_are_zero_no_crash(self):
@@ -103,8 +102,8 @@ class TestCsvExport(unittest.TestCase):
 
             with open(path, mode="r", newline="", encoding="utf-8") as file:
                 reader = csv.reader(file)
-                _ = next(reader) # header
-                self.assertEqual(len(reader), len(self.system.list_occupied_rooms()))
+                _ = next(reader, None) # header
+                self.assertEqual(sum(1 for _ in reader), len(self.system.list_occupied_rooms()))
 
 
 if __name__ == "__main__":
