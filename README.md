@@ -1,136 +1,89 @@
-# Distributed Hilbert's Hotel (Consistent Hashing)
+# Distributed Hilbert's Hotel
 
-โครงงานวิชา Object Oriented Data Structure ภาคการศึกษา 1/2569
+โครงงาน Object Oriented Data Structure ภาคการศึกษา 1/2569
 
-## โครงสร้างไฟล์และผู้รับผิดชอบ
+ระบบเลือกอาคารด้วย Consistent Hashing และคำนวณเลขห้องด้วย Cantor pairing.
+เมื่อเพิ่มแขก แขกเดิมไม่ย้าย เมื่อเพิ่ม/ลบอาคาร เปลี่ยนเฉพาะ node_id ของผู้ได้รับผลกระทบ.
 
-ไฟล์ทั้งหมด (รวมไฟล์เทส) อยู่ในโฟลเดอร์รากเดียวกัน ไม่มีโฟลเดอร์ `tests/`
+## การติดตั้งและรัน
 
-| ไฟล์ | ผู้รับผิดชอบ | หน้าที่ | สถานะ |
-|---|---|---|---|
-| `hashring.py` | คนที่ 1 | วงแหวน Consistent Hashing, การเลือกอาคาร | เสร็จ ผ่านเทส |
-| `guest.py` | คนที่ 2 | ข้อมูลแขก, คำนวณเลขห้อง (Cantor pairing), ดัชนีค้นหา | เสร็จ ผ่านเทส |
-| `rebalance.py` | คนที่ 3 | เพิ่ม/ลบอาคาร, คำนวณและบันทึกการย้ายแขก | เสร็จ ผ่านเทส |
-| `experiments.py` | คนที่ 4 | ทดลอง A/B/C, hash mod N, วัดเวลา/หน่วยความจำ, กราฟ | |
-| `hotel_system.py`, `main.py` | คนที่ 5 | ตัวเชื่อมทุกส่วน (facade), เมนูข้อความ, export CSV | เสร็จ ผ่านเทส |
-| `test_*.py` | ทุกคน (คนละไฟล์ตามส่วนของตัวเอง) | unit test (`test_guest.py`, `test_hashring.py`, `test_rebalance.py`, `test_hotel_system.py`) | |
-| `Distributed_Hilbert's_Hotel.py` | (ระบุผู้รับผิดชอบ) | (ระบุหน้าที่ของไฟล์นี้) | |
-| `requirements.txt` | - | รายการแพ็กเกจที่ต้องติดตั้ง | |
+ใช้ Python 3.10 ขึ้นไป; ทดสอบการทำงานจริงบน Python 3.13.9.
+ส่วนหลักใช้ standard library; matplotlib ใช้สร้างกราฟเท่านั้น.
 
-แต่ละไฟล์มี docstring บอก TODO และรายละเอียดกติกาที่ต้องทำตามกำกับไว้แล้ว
-ค้นหาคำว่า `TODO(คนที่ N)` ในแต่ละไฟล์เพื่อดูว่าต้องเติมส่วนไหน
+รันคำสั่งจากโฟลเดอร์นี้ (โฟลเดอร์ที่มี main.py):
 
-## รุ่น Python ที่ใช้
-
-Python 3.10 ขึ้นไป (ใช้ syntax `int | None` ต้องการ Python >= 3.10)
-ตรวจสอบด้วย:
-```
-python --version
+```powershell
+python -m pip install -r requirements.txt
+python -X utf8 main.py
 ```
 
-## วิธีติดตั้ง
+ไฟล์ Distributed_Hilbert’s_Hotel.py เป็นทางเข้าชื่อเดิมและเรียกเมนูเดียวกัน.
 
-```
-pip install -r requirements.txt
-```
+## การใช้งานเมนู
 
-ใช้ matplotlib สำหรับกราฟใน `experiments.py` เท่านั้น ไฟล์อื่นในโครงงานนี้
-(hashring, guest, rebalance, hotel_system) ใช้แต่ `list`, `dict`, `set`, `hashlib`,
-`bisect` ซึ่งเป็น standard library ทั้งหมด
+1. เริ่มระบบ: กรอกรหัสอาคารคั่นด้วยช่องว่าง เช่น A B C (จำนวนรหัสคือ N), ค่า V>=1,
+   จำนวนช่องทางเริ่มต้น และจำนวนแขกแต่ละช่องทาง โดย c=1..จำนวนช่องทาง และ s เริ่มที่ 1.
+   ใส่จำนวนช่องทาง 0 เพื่อเริ่มแบบไม่มีแขกได้.
+2. เพิ่มแขก: ระบุ c, s เริ่มต้น, count>=0. count=0 ไม่เปลี่ยนข้อมูล.
+   ถ้ามีรหัสซ้ำในกลุ่มจะปฏิเสธทั้งกลุ่ม.
+3. ลบแขก: กรอก c s.
+4. เพิ่มอาคาร / 5. ลบอาคาร: ระบุ ID และดูจำนวน/อัตรา/รายการย้าย.
+   แสดงสูงสุด 50 รายการ; CSV ส่งออกครบ. ลบอาคารสุดท้ายไม่ได้.
+6. ค้นหาด้วย c s หรือ ID อาคารและเลขห้อง.
+7. แสดงห้องเรียง node_id และ room_no พร้อมยอดรวม (หน้าจอแสดง 100 รายการแรก).
+8. แสดงโหลดทุกอาคาร รวมอาคารว่าง และ max/min/mean/std/CV.
+9. ส่งออกข้อมูลแขกหรือรายการย้ายล่าสุดเป็น UTF-8 CSV.
+0. ออก; EOF หรือ Ctrl+C ออกได้เช่นกัน.
 
-## วิธีรันโปรแกรม
+รหัสอาคารต้องเป็นข้อความไม่ว่าง ไม่มี whitespace และไม่ซ้ำ.
+เริ่มระบบใหม่สำเร็จจะล้างแขกและรายการย้ายเก่า; ถ้ากรอกข้อมูลเริ่มใหม่ผิด ระบบเดิมยังอยู่.
+เมื่อไม่มีแขก สถิติพื้นฐานเป็น 0 และ CV/อัตราย้ายไม่คำนวณ.
 
-```
-python main.py
-```
+## รันทดสอบ
 
-## วิธีรันเทส
-
-ต้องรันจากโฟลเดอร์รากของโปรเจกต์ (โฟลเดอร์ที่มี `guest.py` อยู่)
-
-เทสทั้งหมด:
-```
-python -m unittest discover -s . -p "test_*.py" -v
-```
-
-เทสเฉพาะไฟล์ เช่น guest:
-```
-python -m unittest test_guest -v
+```powershell
+python -X utf8 -m unittest discover -s . -p "test_*.py" -v
 ```
 
-หรือถ้าติดตั้ง pytest ไว้:
+มีเทสสูตรห้อง, ดัชนีสองทาง, วงแหวนตัวอย่างในโจทย์, collision/wraparound,
+การย้ายที่ V>1, ปฏิเสธคำสั่งโดยไม่เปลี่ยนข้อมูล, CV, การเรียง, initialization,
+เมนู input ผิด, reset, CSV และการเรียก main.py จริง.
+test_system_regressions.py เป็น regression tests สำหรับปัญหาที่พบในการตรวจโครงงาน.
+
+## ทดลองและสร้างกราฟ
+
+```powershell
+python -X utf8 experiments.py --output results
 ```
-python -m pytest -v
-```
 
-## วิธีรันการทดลอง (หลังจากฟังก์ชันบังคับผ่านการทดสอบแล้ว)
+- A: K=1,000/10,000/100,000; N=10, V=32.
+- B: N=5/10/20; K=10,000, V=32; เพิ่ม/ลบหนึ่งอาคารจากสถานะเริ่มต้นแยกกัน.
+- C: V=1/8/32; N=10, K=10,000.
+- ทุกชุดใช้ 10 ช่องทาง และ salt 0/1/2 เหมือนกันทั้งสองวิธีในรอบเดียวกัน.
+- CSV ดิบมี experiment, K,N,V,salt,round และค่าที่วัด; summary มีมัธยฐานและ min/max.
+- เวลาใช้ perf_counter ไม่รวม input/output; ค้นหา 1,000 ครั้งแล้วหารเฉลี่ยต่อครั้ง.
+- หน่วยความจำใช้ tracemalloc current/peak เป็น MiB แยกรอบจากการจับเวลา.
+- กราฟมีหน่วย/พารามิเตอร์/มัธยฐาน/min-max; environment.json ระบุ Python และเครื่อง.
 
-```
-python -c "import experiments; experiments.run_experiment_A([1000, 10000, 100000])"
-```
-(ปรับตามฟังก์ชันจริงที่คนที่ 4 เขียนเสร็จ)
+results/ มี CSV 3 ชุด, CSV สรุป, JSON ดิบ, environment และกราฟ 3 ภาพ.
+ตัวเลขเวลาอาจเปลี่ยนตามเครื่องและภาระงาน; migration/load ทำซ้ำด้วย salt เดิมได้.
+ConsistentHashSystem ใน experiments.py สืบทอด HotelSystem และเรียก rebalance เดียวกับเมนู.
 
-## ลำดับการพัฒนาที่แนะนำ
+## โครงสร้างข้อมูลและไฟล์
 
-1. คนที่ 1 ทำ `hashring.py` ให้เสร็จก่อน (คนอื่นทุกคนต้องใช้)
-2. คนที่ 2 ทำ `guest.py` ขนานกันไปได้เลย (ไม่ต้องรอคนที่ 1)
-3. คนที่ 3 เริ่ม `rebalance.py` ได้เมื่อ hashring.py และ guest.py มี interface
-   (ชื่อฟังก์ชัน/พารามิเตอร์) ที่ตกลงกันแล้ว แม้ตัว implementation จะยังไม่เสร็จ
-   (ใช้ `raise NotImplementedError` ตามโครงที่วางไว้ไปก่อนได้)
-4. คนที่ 5 ทำ `hotel_system.py` ขนานไปได้เช่นกัน โดยอิงจาก interface เดียวกัน
-5. คนที่ 4 เตรียม `ModHashSystem`, ฟังก์ชันวัดเวลา/หน่วยความจำ และโครงกราฟไปพลางก่อน
-   แล้วค่อยรันการทดลองจริงเมื่อฟังก์ชันบังคับข้อ 1-4 ผ่านเทสหมดแล้ว
+| ไฟล์ | หน้าที่ |
+|---|---|
+| hashring.py | HashRing, SHA-256, sorted points, binary search, optional salt |
+| guest.py | GuestRecord, Cantor pairing, ดัชนีรหัสแขกและที่อยู่ห้อง |
+| rebalance.py | รายการย้ายและเวลาแยกปรับวงแหวน/หาแขก/อัปเดต |
+| hotel_system.py | HotelSystem และ text menu |
+| main.py | จุดเริ่มต้น |
+| experiments.py | ModHashSystem และการทดลอง/CSV/กราฟ |
+| test_*.py | ทดสอบอัตโนมัติ |
+| TECHNICAL_REPORT.md | แบบข้อมูล หลักการคำนวณ Big-O และข้อจำกัด |
 
-**ก่อนเริ่มเขียนจริง ให้ทั้งกลุ่มตกลงกันเรื่องนี้ก่อน:**
-- รูปแบบข้อมูลแขกที่ส่งต่อกัน (ดู `GuestRecord` ใน `guest.py`)
-- ชื่อเมธอดของ `HashRing` ที่คนอื่นจะเรียกใช้ (`add_node`, `remove_node`, `get_owner`,
-  `get_owner_of_guest`)
-- โครงสร้าง `MigrationReport` ใน `rebalance.py` (คนที่ 4, 5 จะเอาไปใช้ทำกราฟ/CSV ต่อ)
+## ก่อนส่งงาน
 
-## Interface ที่ตกลงกันแล้ว
-
-### guest.py (คนที่ 2 เสร็จแล้ว)
-
-- `GuestRecord(c, s, node_id, room_no)` เป็น dataclass
-- `compute_room_no(c, s)` -> `int`  ใช้จำนวนเต็มล้วน raise `ValueError` ถ้า c หรือ s ไม่ใช่จำนวนเต็มบวก
-- `GuestRegistry.by_guest_code` : `dict[(c, s)] -> GuestRecord`
-- `GuestRegistry.by_address` : `dict[(node_id, room_no)] -> (c, s)`
-- `add_guest(c, s, node_id)` -> `(ok, reason)`  รหัสซ้ำหรือไม่ถูกต้องคืน False ไม่ throw
-- `add_guests_batch(c, s_start, count, node_id_lookup_fn)` -> `(ok, reason, [(c, s), ...])`
-  - ปฏิเสธทั้งกลุ่มถ้ามีรหัสซ้ำแม้แต่รายการเดียว (ไม่เพิ่มบางส่วน)
-  - `count == 0` คืน `(True, "ไม่มีการเปลี่ยนแปลง", [])`, `count` ติดลบถูกปฏิเสธ
-- `remove_guest(c, s)` -> `(ok, reason)`  ไม่พบแล้วคืน False ไม่ throw
-- `find_by_guest_code(c, s)` -> `(node_id, room_no)` หรือ `None`
-- `find_by_address(node_id, room_no)` -> `(c, s)` หรือ `None`
-- `update_node_of_guest(c, s, new_node_id)` -> `None`
-  room_no คงเดิม อัปเดตทั้งสอง dict และ **raise `KeyError` ถ้าไม่พบแขก**
-- `list_guests_in_building(node_id)` -> `[(room_no, c, s), ...]` เรียงตาม room_no
-- `guest_count()`, `all_guest_codes()`
-
-### ข้อควรระวังตอนเชื่อมไฟล์
-
-- `HashRing.get_owner` คืน tuple `(position, node_id, j)` แต่ `node_id_lookup_fn`
-  ที่ส่งเข้า `add_guests_batch` ต้องคืนแค่ `node_id` (str) ฝั่ง `hotel_system.py`
-  ต้องหยิบเฉพาะ node_id ออกมาก่อน เช่น
-  `lambda c, s: ring.get_owner_of_guest(c, s)[1]`
-  (ถ้า `get_owner_of_guest` คืนรูปแบบต่างจากนี้ให้ปรับตามจริง)
-- `guest.py` ไม่เรียก `HashRing` เอง การเลือกอาคารเป็นหน้าที่ของ HashRing และ `hotel_system.py`
-- `rebalance.py` ควรเรียก `update_node_of_guest` เฉพาะแขกที่มีอยู่จริง
-  (ใช้ `all_guest_codes()` เพื่อวนตรวจแขกทุกคน)
-
-### hashring.py (คนที่ 1 เขียนครบ, test_hashring.py เขียนแล้ว)
-
-- `hash_to_position(key)` -> `int` : sha256 -> utf-8 -> 8 ไบต์แรก big-endian (ตำแหน่ง 0 .. 2**64-1)
-- `HashRing(V)` เก็บ `points` = list ของ `(position, node_id, j)` เรียงลำดับ และ `nodes` = set ของ node_id
-- `add_node(node_id)` -> `bool`  ซ้ำคืน False
-- `remove_node(node_id)` -> `bool`  ไม่พบ หรือเป็นอาคารสุดท้าย คืน False
-- `get_owner(position)` และ `get_owner_of_guest(c, s)` คืน **tuple `(position, node_id, j)`**
-  (ไม่ใช่ str ตามที่ type hint/docstring เขียนไว้) หรือ `None` ถ้าวงแหวนว่าง
-  ผู้เรียกต้องใช้ `[1]` เพื่อเอา node_id
-- `node_count()` = N, `point_count()` = M = N x V (เป็นเมธอด ต้องเรียกด้วย `()`)
-
-**ข้อสังเกตเล็กน้อย (ไม่กระทบความถูกต้อง)**
-- `set.remove` เป็น O(1) ดังนั้น `remove_node` รวมแล้วเป็น O(M) ไม่ใช่ O(N + M)
-- ควรแก้ type hint ของ `get_owner` / `get_owner_of_guest` ให้ตรงกับที่คืนจริง
-
-รันเทสเฉพาะส่วนนี้: `python -m unittest test_hashring -v`
+ตรวจผลเทสและแนบ results/; ไม่ต้องแนบ environment หรือแพ็กเกจที่ติดตั้ง.
+นำเนื้อหาเทคนิคและผลจริงไปจัดรายงาน Word/PDF ที่มีเนื้อหาตรงกัน.
+เติมรายชื่อสมาชิก หน้าที่จริง สัดส่วนงานและลายเซ็นตามโจทย์ โดยผู้จัดทำตรวจสอบความถูกต้องเอง.

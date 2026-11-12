@@ -105,6 +105,8 @@ class GuestRegistry:
 
     # ---------- ลบ ----------
     def remove_guest(self, c: int, s: int) -> tuple[bool, str]:
+        if not _is_pos_int(c) or not _is_pos_int(s):
+            return False, "c และ s ต้องเป็นจำนวนเต็มบวก"
         rec = self.by_guest_code.pop((c, s), None)
         if rec is None:
             return False, f"ไม่พบแขก ({c},{s})"
@@ -114,6 +116,8 @@ class GuestRegistry:
     # ---------- ค้นหา ----------
     def find_by_guest_code(self, c: int, s: int):
         """คืน (node_id, room_no) หรือ None"""
+        if not _is_pos_int(c) or not _is_pos_int(s):
+            return None
         rec = self.by_guest_code.get((c, s))
         if rec is None:
             return None
@@ -121,6 +125,8 @@ class GuestRegistry:
 
     def find_by_address(self, node_id: str, room_no: int):
         """คืน (c, s) หรือ None"""
+        if not isinstance(node_id, str) or not _is_pos_int(room_no):
+            return None
         return self.by_address.get((node_id, room_no))
 
     # ---------- ย้ายอาคาร ----------

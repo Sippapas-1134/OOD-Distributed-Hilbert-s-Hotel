@@ -55,6 +55,7 @@ hotel_system.py (คนที่ 5) จะเรียกใช้ฟังก�
 """
 
 from dataclasses import dataclass, field
+from time import perf_counter
 
 
 @dataclass
@@ -73,6 +74,9 @@ class MigrationReport:
     moved_count: int
     move_rate: float | None  # None ถ้า K == 0 (ไม่คำนวณอัตรา)
     moves: list[MigrationRecord] = field(default_factory=list)
+    timings: dict[str, float] = field(default_factory=lambda: {
+        "ring_s": 0.0, "find_s": 0.0, "update_s": 0.0,
+    })
 
 
 # M = N*V, K = แขกทั้งหมด, R = ผู้ย้าย; ถือว่ารหัสมีขนาดคงที่ และ dict/set เฉลี่ย O(1)
@@ -87,7 +91,10 @@ def add_building(ring, registry, node_id: str) -> MigrationReport:
     """
 
     total_guests = registry.guest_count()
-
+    if not ring.valid_node_id(node_id):
+        return MigrationReport(False, "รหัสอาคารต้องไม่ว่างและไม่มีช่องว่าง", 0,
+                               0.0 if total_guests else None)
+    t0 = perf_counter()
     if not ring.add_node(node_id):
         return MigrationReport(
             accepted=False,
@@ -96,13 +103,13 @@ def add_building(ring, registry, node_id: str) -> MigrationReport:
             move_rate=0.0 if total_guests > 0 else None,
         )
 
+    t1 = perf_counter()
     moves = []
     for c, s in registry.all_guest_codes():
         old_node_id, room_no = registry.find_by_guest_code(c, s)
         new_node_id = ring.get_owner_of_guest(c, s)[1]
 
         if new_node_id != old_node_id:
-            registry.update_node_of_guest(c, s, new_node_id)
             moves.append(MigrationRecord(
                 c=c,
                 s=s,
@@ -111,6 +118,10 @@ def add_building(ring, registry, node_id: str) -> MigrationReport:
                 room_no=room_no,
             ))
 
+    t2 = perf_counter()
+    for move in moves:
+        registry.update_node_of_guest(move.c, move.s, move.new_node_id)
+    t3 = perf_counter()
     moved_count = len(moves)
     return MigrationReport(
         accepted=True,
@@ -118,6 +129,7 @@ def add_building(ring, registry, node_id: str) -> MigrationReport:
         moved_count=moved_count,
         move_rate=moved_count / total_guests if total_guests > 0 else None,
         moves=moves,
+        timings={"ring_s": t1 - t0, "find_s": t2 - t1, "update_s": t3 - t2},
     )
 
 
@@ -128,7 +140,7 @@ def remove_building(ring, registry, node_id: str) -> MigrationReport:
     """เหมือน add_building แต่เป็นการลบอาคาร ดูขั้นตอน 2) ใน docstring ด้านบน"""
 
     total_guests = registry.guest_count()
-    if node_id not in ring.nodes:
+    if not ring.valid_node_id(node_id) or node_id not in ring.nodes:
         return MigrationReport(
             accepted=False,
             reason="Building not found",
@@ -143,7 +155,9 @@ def remove_building(ring, registry, node_id: str) -> MigrationReport:
             move_rate=0.0 if total_guests > 0 else None,
         )
 
+    t0 = perf_counter()
     guests_to_move = registry.list_guests_in_building(node_id)
+    t1 = perf_counter()
 
     if not ring.remove_node(node_id):
         return MigrationReport(
@@ -153,10 +167,10 @@ def remove_building(ring, registry, node_id: str) -> MigrationReport:
             move_rate=0.0 if total_guests > 0 else None,
         )
 
+    t2 = perf_counter()
     moves = []
     for room_no, c, s in guests_to_move:
         new_node_id = ring.get_owner_of_guest(c, s)[1]
-        registry.update_node_of_guest(c, s, new_node_id)
         moves.append(MigrationRecord(
             c=c,
             s=s,
@@ -165,6 +179,10 @@ def remove_building(ring, registry, node_id: str) -> MigrationReport:
             room_no=room_no,
         ))
 
+    t3 = perf_counter()
+    for move in moves:
+        registry.update_node_of_guest(move.c, move.s, move.new_node_id)
+    t4 = perf_counter()
     moved_count = len(moves)
     return MigrationReport(
         accepted=True,
@@ -172,4 +190,5 @@ def remove_building(ring, registry, node_id: str) -> MigrationReport:
         moved_count=moved_count,
         move_rate=moved_count / total_guests if total_guests > 0 else None,
         moves=moves,
+        timings={"ring_s": t2 - t1, "find_s": (t1 - t0) + (t3 - t2), "update_s": t4 - t3},
     )

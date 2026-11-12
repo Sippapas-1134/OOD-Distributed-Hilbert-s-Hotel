@@ -24,20 +24,17 @@ class TestHotelSystemBasicFlow(unittest.TestCase):
 
     def test_existing_guest_address_unchanged_after_new_guest(self):
         """เพิ่มแขกใหม่แล้ว ที่อยู่ห้องของแขกเดิมต้องไม่เปลี่ยนแม้แต่คนเดียว"""
-        prev_rooms = []
-        curr_rooms = []
-        cs_pairs = [(c, s)for c in range(1, 101) for s in range(1, 101)]
-        for pair in cs_pairs:
-            self.system.add_guest(pair[0], pair[1])
-            curr_rooms = self.system.list_occupied_rooms()
-
-            if len(prev_rooms) == 0:
-                continue
-
-            self.assertNotEqual(curr_rooms[:-1], prev_rooms)
-            prev_rooms = curr_rooms
+        self.system.init_guests({1: 50, 2: 50})
+        before = {code: self.system.find_by_guest(*code)
+                  for code in self.system.registry.all_guest_codes()}
+        self.assertTrue(self.system.add_guest(1, 51)[0])
+        self.assertTrue(self.system.add_guests_batch(3, 1, 25)[0])
+        self.assertEqual(before, {code: self.system.find_by_guest(*code) for code in before})
+        self.assertEqual(self.system.guest_count(), 126)
 
     def test_room_number_matches_formula(self):
+        self.system.init_guests({c: 10 for c in range(1, 11)})
+        self.assertEqual(len(self.system.list_occupied_rooms()), 100)
         for data in self.system.list_occupied_rooms():
             _, room_no, c, s = data
             self.assertEqual(room_no, compute_room_no(c, s))
@@ -89,11 +86,7 @@ class TestCsvExport(unittest.TestCase):
 
     def test_csv_row_count_matches_guest_count(self):
         """จำนวนแถวใน CSV ต้องเท่ากับจำนวนแขกในระบบ"""
-        # TODO(คนที่ 5): เพิ่มแขกจำนวนหนึ่ง แล้ว export แล้วนับแถว เทียบกับ
-        # self.system.registry.guest_count()
-        cs_pairs = [(c, s)for c in range(1, 1001) for s in range(1, 1001)]
-        for pair in cs_pairs:
-            self.system.add_guest(pair[0], pair[1])
+        self.system.init_guests({c: 100 for c in range(1, 11)})
 
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "guests.csv")
@@ -103,7 +96,7 @@ class TestCsvExport(unittest.TestCase):
             with open(path, mode="r", newline="", encoding="utf-8") as file:
                 reader = csv.reader(file)
                 _ = next(reader, None) # header
-                self.assertEqual(sum(1 for _ in reader), len(self.system.list_occupied_rooms()))
+                self.assertEqual(sum(1 for _ in reader), self.system.registry.guest_count())
 
 
 if __name__ == "__main__":
