@@ -1,0 +1,15 @@
+{
+  "nodes_before": [
+    "A",
+    "B"
+  ],
+  "V": 8,
+  "channels": {
+    "1": 20,
+    "2": 20
+  },
+  "operation": "add C",
+  "salt": null,
+  "guests": 40,
+  "moved_count": 8
+}

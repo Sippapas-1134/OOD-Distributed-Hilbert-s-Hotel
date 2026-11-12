@@ -1,0 +1,102 @@
+test_add_and_find (test_guest.TestRegistry.test_add_and_find) ... ok
+test_batch_lookup_failure_leaves_no_partial (test_guest.TestRegistry.test_batch_lookup_failure_leaves_no_partial) ... ok
+test_batch_negative_count (test_guest.TestRegistry.test_batch_negative_count) ... ok
+test_batch_ok (test_guest.TestRegistry.test_batch_ok) ... ok
+test_batch_rejects_whole_group_on_one_dup (test_guest.TestRegistry.test_batch_rejects_whole_group_on_one_dup) ... ok
+test_batch_zero (test_guest.TestRegistry.test_batch_zero) ... ok
+test_indexes_consistent (test_guest.TestRegistry.test_indexes_consistent) ... ok
+test_list_sorted (test_guest.TestRegistry.test_list_sorted) ... ok
+test_readd_after_remove (test_guest.TestRegistry.test_readd_after_remove) ... ok
+test_reject_duplicate_single (test_guest.TestRegistry.test_reject_duplicate_single) ... ok
+test_remove (test_guest.TestRegistry.test_remove) ... ok
+test_remove_missing_no_exception (test_guest.TestRegistry.test_remove_missing_no_exception) ... ok
+test_update_node (test_guest.TestRegistry.test_update_node) ... ok
+test_update_node_same_node (test_guest.TestRegistry.test_update_node_same_node) ... ok
+test_big_ints_exact (test_guest.TestRoomNo.test_big_ints_exact) ... ok
+test_invalid (test_guest.TestRoomNo.test_invalid) ... ok
+test_no_collision_exhaustive_small (test_guest.TestRoomNo.test_no_collision_exhaustive_small) ... ok
+test_no_collision_random (test_guest.TestRoomNo.test_no_collision_random) ... ok
+test_sample_table (test_guest.TestRoomNo.test_sample_table) ... ok
+test_add_does_not_move_existing_points (test_hashring.TestAddRemove.test_add_does_not_move_existing_points) ... ok
+test_add_duplicate_rejected (test_hashring.TestAddRemove.test_add_duplicate_rejected) ... ok
+test_add_node_creates_v_points (test_hashring.TestAddRemove.test_add_node_creates_v_points) ... ok
+test_cannot_remove_last_node (test_hashring.TestAddRemove.test_cannot_remove_last_node) ... ok
+test_points_stay_sorted (test_hashring.TestAddRemove.test_points_stay_sorted) ... ok
+test_readd_after_remove_gives_same_points (test_hashring.TestAddRemove.test_readd_after_remove_gives_same_points) ... ok
+test_remove_keeps_other_points_unchanged (test_hashring.TestAddRemove.test_remove_keeps_other_points_unchanged) ... ok
+test_remove_missing_rejected (test_hashring.TestAddRemove.test_remove_missing_rejected) ... ok
+test_collision_at_first_point_with_wraparound (test_hashring.TestCollision.test_collision_at_first_point_with_wraparound) ... ok
+test_same_position_sorted_by_node_id_then_j (test_hashring.TestCollision.test_same_position_sorted_by_node_id_then_j) ... ok
+test_guest_and_node_keys_differ (test_hashring.TestHashToPosition.test_guest_and_node_keys_differ) ... ok
+test_in_range (test_hashring.TestHashToPosition.test_in_range) ... ok
+test_matches_spec (test_hashring.TestHashToPosition.test_matches_spec) ... ok
+test_stable_constants (test_hashring.TestHashToPosition.test_stable_constants) ... ok
+test_add_node_only_moves_guests_to_new_node (test_hashring.TestRealRing.test_add_node_only_moves_guests_to_new_node) ... ok
+test_counts (test_hashring.TestRealRing.test_counts) ... ok
+test_deterministic_across_instances (test_hashring.TestRealRing.test_deterministic_across_instances) ... ok
+test_owner_is_always_a_live_node (test_hashring.TestRealRing.test_owner_is_always_a_live_node) ... ok
+test_owner_of_guest_matches_position (test_hashring.TestRealRing.test_owner_of_guest_matches_position) ... ok
+test_remove_node_only_moves_guests_of_removed_node (test_hashring.TestRealRing.test_remove_node_only_moves_guests_of_removed_node) ... ok
+test_empty_ring_returns_none (test_hashring.TestSmallRing.test_empty_ring_returns_none) ... ok
+test_get_owner_returns_full_point (test_hashring.TestSmallRing.test_get_owner_returns_full_point) ... ok
+test_owner_table (test_hashring.TestSmallRing.test_owner_table) ... ok
+test_single_point_owns_everything (test_hashring.TestSmallRing.test_single_point_owns_everything) ... ok
+test_wraparound_90_is_A (test_hashring.TestSmallRing.test_wraparound_90_is_A) ... ok
+test_csv_row_count_matches_guest_count (test_hotel_system.TestCsvExport.test_csv_row_count_matches_guest_count)
+จำนวนแถวใน CSV ต้องเท่ากับจำนวนแขกในระบบ ... ok
+test_add_duplicate_guest_rejected_gracefully (test_hotel_system.TestEdgeCases.test_add_duplicate_guest_rejected_gracefully) ... ok
+test_add_existing_building_rejected_gracefully (test_hotel_system.TestEdgeCases.test_add_existing_building_rejected_gracefully) ... ok
+test_remove_last_building_rejected_gracefully (test_hotel_system.TestEdgeCases.test_remove_last_building_rejected_gracefully) ... ok
+test_remove_nonexistent_building_rejected_gracefully (test_hotel_system.TestEdgeCases.test_remove_nonexistent_building_rejected_gracefully) ... ok
+test_remove_nonexistent_guest_rejected_gracefully (test_hotel_system.TestEdgeCases.test_remove_nonexistent_guest_rejected_gracefully) ... ok
+test_search_not_found_reports_clearly (test_hotel_system.TestEdgeCases.test_search_not_found_reports_clearly) ... ok
+test_zero_guests_stats_are_zero_no_crash (test_hotel_system.TestEdgeCases.test_zero_guests_stats_are_zero_no_crash)
+ยังไม่มีแขกในระบบ (K=0): ต้องไม่หารด้วยศูนย์ ค่าสถิติเป็น 0 และไม่คำนวณ CV ... ok
+test_existing_guest_address_unchanged_after_new_guest (test_hotel_system.TestHotelSystemBasicFlow.test_existing_guest_address_unchanged_after_new_guest)
+เพิ่มแขกใหม่แล้ว ที่อยู่ห้องของแขกเดิมต้องไม่เปลี่ยนแม้แต่คนเดียว ... ok
+test_room_number_matches_formula (test_hotel_system.TestHotelSystemBasicFlow.test_room_number_matches_formula) ... ok
+test_add_building_duplicate_rejected (test_rebalance.TestRebalanceEdgeCases.test_add_building_duplicate_rejected) ... ok
+test_rejections_without_guests (test_rebalance.TestRebalanceEdgeCases.test_rejections_without_guests) ... ok
+test_remove_building_unknown_rejected (test_rebalance.TestRebalanceEdgeCases.test_remove_building_unknown_rejected) ... ok
+test_remove_empty_building_with_guests_elsewhere (test_rebalance.TestRebalanceEdgeCases.test_remove_empty_building_with_guests_elsewhere) ... ok
+test_remove_last_building_rejected (test_rebalance.TestRebalanceEdgeCases.test_remove_last_building_rejected) ... ok
+test_remove_last_building_without_guests_rejected (test_rebalance.TestRebalanceEdgeCases.test_remove_last_building_without_guests_rejected) ... ok
+test_zero_guests_move_rate_reported_as_none (test_rebalance.TestRebalanceEdgeCases.test_zero_guests_move_rate_reported_as_none)
+K = 0: รายงานจำนวนย้ายเป็น 0 และไม่คำนวณอัตรา (move_rate ควรเป็น None) ... ok
+test_add_building_migrates_only_two (test_rebalance.TestRebalanceWithSpecExample.test_add_building_migrates_only_two)
+เพิ่ม D ที่ตำแหน่ง 35 ต้องมีคนย้ายเข้า D เท่านั้น 2 คน คนอื่นไม่ขยับ ... ok
+test_guest_count_invariant (test_rebalance.TestRebalanceWithSpecExample.test_guest_count_invariant)
+จำนวนแขกรวมในระบบต้องไม่เพิ่มไม่ลดหลังเพิ่ม/ลบอาคาร ... ok
+test_remove_building_migrates_only_three (test_rebalance.TestRebalanceWithSpecExample.test_remove_building_migrates_only_three)
+ลบ B จากสถานะเริ่มต้น ต้องมีคนย้าย 3 คน (เฉพาะที่เคยอยู่ B) อาคารอื่นไม่ขยับ ... ok
+test_room_no_unchanged_after_migration (test_rebalance.TestRebalanceWithSpecExample.test_room_no_unchanged_after_migration)
+room_no ของทุกคนที่ย้ายต้องเท่าเดิม เปลี่ยนแค่ node_id ... ok
+test_add_preserves_existing_points_and_moves_only_to_new_building (test_rebalance.TestRebalanceWithVirtualNodes.test_add_preserves_existing_points_and_moves_only_to_new_building) ... ok
+test_remove_preserves_other_buildings_and_their_points (test_rebalance.TestRebalanceWithVirtualNodes.test_remove_preserves_other_buildings_and_their_points) ... ok
+test_all_operations_before_initialization_are_rejected (test_system_regressions.TestMenuRegressions.test_all_operations_before_initialization_are_rejected) ... ok
+test_bad_export_path_returns_to_menu (test_system_regressions.TestMenuRegressions.test_bad_export_path_returns_to_menu) ... ok
+test_empty_load_report_shows_zero_values (test_system_regressions.TestMenuRegressions.test_empty_load_report_shows_zero_values) ... ok
+test_end_of_input_exits_cleanly (test_system_regressions.TestMenuRegressions.test_end_of_input_exits_cleanly) ... ok
+test_initial_channels_and_two_way_search (test_system_regressions.TestMenuRegressions.test_initial_channels_and_two_way_search) ... ok
+test_invalid_numbers_return_to_menu (test_system_regressions.TestMenuRegressions.test_invalid_numbers_return_to_menu) ... ok
+test_invalid_restart_preserves_previous_system (test_system_regressions.TestMenuRegressions.test_invalid_restart_preserves_previous_system) ... ok
+test_main_process_exports_complete_csv (test_system_regressions.TestMenuRegressions.test_main_process_exports_complete_csv) ... ok
+test_malformed_pairs_and_multiple_spaces (test_system_regressions.TestMenuRegressions.test_malformed_pairs_and_multiple_spaces) ... ok
+test_migrations_display_count_rate_and_unchanged_room (test_system_regressions.TestMenuRegressions.test_migrations_display_count_rate_and_unchanged_room) ... ok
+test_reset_clears_migration_report (test_system_regressions.TestMenuRegressions.test_reset_clears_migration_report) ... ok
+test_zero_batch_is_no_change (test_system_regressions.TestMenuRegressions.test_zero_batch_is_no_change) ... ok
+test_cv_matches_population_standard_deviation_over_mean (test_system_regressions.TestSystemRegressions.test_cv_matches_population_standard_deviation_over_mean) ... ok
+test_empty_statistics_include_all_buildings (test_system_regressions.TestSystemRegressions.test_empty_statistics_include_all_buildings) ... ok
+test_experiment_summary_uses_median_and_range (test_system_regressions.TestSystemRegressions.test_experiment_summary_uses_median_and_range) ... ok
+test_experiments_call_production_rebalance (test_system_regressions.TestSystemRegressions.test_experiments_call_production_rebalance) ... ok
+test_initial_channels_start_at_one (test_system_regressions.TestSystemRegressions.test_initial_channels_start_at_one) ... ok
+test_initialization_rejects_entire_invalid_set (test_system_regressions.TestSystemRegressions.test_initialization_rejects_entire_invalid_set) ... ok
+test_invalid_building_operations_preserve_state (test_system_regressions.TestSystemRegressions.test_invalid_building_operations_preserve_state) ... ok
+test_invalid_remove_does_not_alias_guest_one (test_system_regressions.TestSystemRegressions.test_invalid_remove_does_not_alias_guest_one) ... ok
+test_invalid_ring_and_initial_buildings (test_system_regressions.TestSystemRegressions.test_invalid_ring_and_initial_buildings) ... ok
+test_listing_and_counts_cover_every_guest (test_system_regressions.TestSystemRegressions.test_listing_and_counts_cover_every_guest) ... ok
+
+----------------------------------------------------------------------
+Ran 89 tests in 0.478s
+
+OK

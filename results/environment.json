@@ -1,0 +1,11 @@
+{
+  "python": "3.13.9 (tags/v3.13.9:8183fa5, Oct 14 2025, 14:09:13) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "salts": [
+    0,
+    1,
+    2
+  ],
+  "search_batch": 1000,
+  "memory": "Python tracemalloc, current/peak MiB; separate run"
+}

@@ -1,64 +1,11 @@
-"""
-experiments.py
-งานของ: คนที่ 4 -- การทดลองและกราฟ (เปรียบเทียบ Consistent Hashing กับ hash mod N)
+"""การทดลอง A/B/C ด้วย HotelSystem จริง เปรียบเทียบกับ hash mod N.
 
-ไฟล์นี้ "ไม่ควร" แก้ hashring.py / guest.py / rebalance.py โดยตรง
-แต่เรียกใช้ hotel_system.HotelSystem (ของคนที่ 5) เป็นตัวแทน Consistent Hashing
-และ implement ModHashSystem แยกต่างหากในไฟล์นี้ (หรือไฟล์ mod_hash.py ใหม่) สำหรับ hash mod N
-
-หน้าที่ที่ต้องทำ:
-
-1. ModHashSystem: ระบบเทียบเคียงด้วยวิธี hash mod N
-   - เก็บรายการรหัสอาคารตามลำดับที่เพิ่ม (list ธรรมดา ไม่ใช่วงแหวน)
-   - เลือกอาคารด้วย index = H(guest) mod N  (ใช้ hash_to_position เดียวกับ hashring.py
-     เพื่อให้ยุติธรรม ไม่ใช้ hash() ของ Python)
-   - เพิ่มอาคาร: ต่อท้าย list
-   - ลบอาคาร: เอารหัสนั้นออก โดยรักษาลำดับของอาคารที่เหลือ (list.remove หรือ filter)
-   - ต้องคำนวณแขกที่ย้ายด้วย "รหัสอาคารจริง" ไม่ใช่เทียบแค่ index
-     (เพราะ index ของอาคารเดิมจะเลื่อนเมื่อลบอาคารตัวกลาง ๆ ออกไป)
-
-2. run_experiment_A(...): ทดสอบขนาดข้อมูล K = 1,000 / 10,000 / 100,000 (N=10, V=32 คงที่)
-   วัด: เวลาจัดแขกเริ่มต้น, เวลาค้นหา (เฉลี่ยจาก 1,000 ครั้ง), เวลาสร้างรายการห้อง (เรียงลำดับ),
-   หน่วยความจำ (tracemalloc)
-
-3. run_experiment_B(...): ทดสอบจำนวนอาคาร N = 5 / 10 / 20 (K=10,000, V=32 คงที่)
-   เพิ่ม 1 อาคาร และลบ 1 อาคาร แล้ววัด: จำนวนย้าย, อัตราย้าย, เวลา
-   ทำทั้งด้วย Consistent Hashing และ hash mod N ด้วยชุดแขก/อาคาร/แฮชเดียวกัน
-
-4. run_experiment_C(...): ทดสอบจำนวน virtual node V = 1 / 8 / 32 (N=10, K=10,000 คงที่)
-   วัด: จำนวนแขกต่ออาคาร, CV (ความสมดุล), หน่วยความจำ, จำนวนย้าย
-
-5. กติกาการวัดที่ต้องทำตาม (โจทย์หัวข้อ 7.2):
-   - ใช้ time.perf_counter() แยกเวลาแต่ละขั้นตอน (สร้างวงแหวน / จัดแขก / ค้นหา / เรียงลำดับ /
-     เพิ่มลบอาคาร) ไม่รวมเวลารับ input หรือแสดงผล/เขียนไฟล์
-   - วัดการค้นหาเป็นชุด 1,000 ครั้ง แล้วหารเฉลี่ยต่อครั้ง
-   - ทำ 3 รอบ เปลี่ยน salt (เช่น 0, 1, 2) ต่อท้ายข้อความก่อนแฮช แล้วรายงานค่ามัธยฐานของ 3 รอบ
-     ใช้ salt เดียวกันกับทั้งสองวิธีในรอบเดียวกัน (เพื่อเทียบกันแฟร์)
-   - ใช้ tracemalloc วัด current/peak เป็น MiB แยกรอบวัดหน่วยความจำออกจากรอบจับเวลา
-   - CV = ส่วนเบี่ยงเบนมาตรฐาน / ค่าเฉลี่ย ถ้า K==0 ให้แสดง 0 และไม่คำนวณ
-
-6. ฟังก์ชันสร้างกราฟ (แนะนำใช้ matplotlib):
-   - plot_time_vs_k(results) -> กราฟ (ก) เวลาเทียบ K
-   - plot_migration_rate_vs_n(results) -> กราฟ (ข) อัตราการย้ายเทียบ N ของทั้งสองวิธี
-   - plot_v_effect(results) -> กราฟ (ค) ผลของ V ต่อ CV และหน่วยความจำ
-   ทุกกราฟต้องมีชื่อแกน หน่วย และพารามิเตอร์กำกับ พร้อมแสดงความแปรปรวน 3 รอบ
-   (เช่น error bar จาก min-max หรือ mean ± range)
-
-7. export_experiment_csv(path, results): บันทึกผลการทดลองทุกค่าที่วัดได้ พร้อม
-   พารามิเตอร์ (K, N, V, salt, รอบที่) ของแต่ละแถว เพื่อให้คนอื่นตรวจสอบซ้ำได้
-
-หมายเหตุ: ควรเริ่มเขียนฟังก์ชัน ModHashSystem, การวัดเวลา/หน่วยความจำ และโครงกราฟไปพลางก่อน
-ระหว่างรอคนที่ 1-3 ทำ HashRing/GuestRegistry/rebalance ให้เสร็จ เพราะ logic การวัดผล
-ไม่ได้ขึ้นกับ implementation ภายในของทั้งสามไฟล์นั้นโดยตรง (เรียกผ่าน interface ของ
-hotel_system.HotelSystem เท่านั้น)
-
-ทดสอบ/ตรวจสอบที่ควรทำ:
-- ModHashSystem กับ HotelSystem ต้องใช้รหัสแขกและรหัสอาคารชุดเดียวกันในการเทียบแต่ละคู่ทดลอง
-- ตรวจว่าเปลี่ยน salt แล้วอัตราการย้ายเปลี่ยนไปตามที่คาด (ไม่ใช่ค่าคงที่ทุกรอบ)
+ใช้ perf_counter แยกขั้นตอน, ค้นหา 1,000 ครั้ง, salt 0/1/2,
+tracemalloc รอบแยก, CSV ทุกแถว และกราฟมัธยฐานพร้อม min-max.
+เรียก python experiments.py --output results เพื่อสร้างหลักฐานครบชุด.
 """
 
-# หมายเหตุ: rebalance.py / hotel_system.py ยังไม่เสร็จ จึงทำ ConsistentHashSystem (ตัวแทนบาง ๆ) ในไฟล์นี้
-# จาก HashRing + GuestRegistry และ SaltedHashRing (HashRing ไม่มี salt และห้ามแก้ hashring.py)
+# ConsistentHashSystem เรียก HotelSystem จริง และใช้ salt เดียวกับ ModHashSystem
 # เวลาหน่วยวินาที (_s)  หน่วยความจำหน่วย MiB (_mib) เป็นส่วนที่ Python ติดตามด้วย tracemalloc
 
 import csv
@@ -67,10 +14,10 @@ import random
 import statistics
 import time
 import tracemalloc
-from bisect import insort
 
 from hashring import HashRing, hash_to_position
-from guest import GuestRegistry, compute_room_no
+from guest import compute_room_no
+from hotel_system import HotelSystem
 from rebalance import MigrationRecord, MigrationReport
 
 SEARCH_BATCH = 1000   # วัดการค้นหาเป็นชุด 1,000 ครั้ง แล้วหารต่อครั้ง
@@ -116,6 +63,9 @@ class ModHashSystem:
 
     def __init__(self, initial_node_ids: list[str], salt: str = ""):
         self.node_ids: list[str] = list(initial_node_ids)
+        if (not self.node_ids or any(not HashRing.valid_node_id(n) for n in self.node_ids)
+                or len(set(self.node_ids)) != len(self.node_ids)):
+            raise ValueError("ต้องมีอาคารอย่างน้อย 1 แห่ง รหัสต้องถูกต้องและไม่ซ้ำ")
         self.salt = str(salt)
         # เก็บ mapping (c,s) -> node_id ปัจจุบัน เพื่อคำนวณจำนวนคนย้ายด้วยรหัสอาคารจริง
         self.guest_to_node: dict[tuple[int, int], str] = {}
@@ -154,11 +104,15 @@ class ModHashSystem:
         return _report(True, "สำเร็จ (hash mod N)", moves, self.guest_count())
 
     def add_building(self, node_id: str) -> MigrationReport:
+        self.last_timing = {"ring_s": 0.0, "find_s": 0.0, "update_s": 0.0}
+        if not HashRing.valid_node_id(node_id):
+            return _report(False, "รหัสอาคารต้องไม่ว่างและไม่มีช่องว่าง", [], self.guest_count())
         if node_id in self.node_ids:
             return _report(False, f"ปฏิเสธ: อาคาร {node_id} มีอยู่แล้ว", [], self.guest_count())
         return self._change(self.node_ids.append, node_id)
 
     def remove_building(self, node_id: str) -> MigrationReport:
+        self.last_timing = {"ring_s": 0.0, "find_s": 0.0, "update_s": 0.0}
         if node_id not in self.node_ids:
             return _report(False, f"ปฏิเสธ: ไม่มีอาคาร {node_id}", [], self.guest_count())
         if len(self.node_ids) == 1:
@@ -175,94 +129,17 @@ class ModHashSystem:
 # ---------- ระบบที่ 2: Consistent Hashing ----------
 
 class SaltedHashRing(HashRing):
-    """HashRing ที่เติม salt ต่อท้ายข้อความก่อนแฮช (ส่วนอื่นใช้ของ HashRing เดิม)"""
+    """วงแหวนจริงพร้อม salt สำหรับสร้างตำแหน่งซ้ำได้."""
 
     def __init__(self, v: int, salt: str = ""):
-        super().__init__(v)
-        self.salt = str(salt)
-
-    def add_node(self, node_id: str) -> bool:
-        if node_id in self.nodes:
-            return False
-        self.nodes.add(node_id)
-        for j in range(self.v):
-            insort(self.points, (hash_to_position(f"node:{node_id}:{j}:{self.salt}"), node_id, j))
-        return True
-
-    def get_owner_of_guest(self, c: int, s: int):
-        return self.get_owner(hash_to_position(f"guest:{c}:{s}:{self.salt}"))
+        super().__init__(v, salt=salt)
 
 
-class ConsistentHashSystem:
-    """ตัวแทน Consistent Hashing สำหรับทดลอง (interface เหมือน ModHashSystem)"""
+class ConsistentHashSystem(HotelSystem):
+    """ใช้ facade/registry/rebalance เดียวกับโปรแกรมหลัก."""
 
     def __init__(self, initial_node_ids: list[str], v: int, salt: str = ""):
-        self.ring = SaltedHashRing(v, salt)
-        for node_id in initial_node_ids:
-            self.ring.add_node(node_id)
-        self.registry = GuestRegistry()
-        self.last_timing = {"ring_s": 0.0, "find_s": 0.0, "update_s": 0.0}
-
-    def _node_of(self, c: int, s: int) -> str:
-        return self.ring.get_owner_of_guest(c, s)[1]   # [1] = node_id
-
-    def init_guests(self, channels: dict[int, int]) -> None:
-        for c, count in channels.items():
-            ok, reason, _ = self.registry.add_guests_batch(c, 1, count, self._node_of)
-            if not ok:
-                raise ValueError(reason)
-
-    def guest_count(self) -> int:
-        return self.registry.guest_count()
-
-    def list_occupied_rooms(self) -> list[tuple[str, int, int, int]]:
-        """(node_id, room_no, c, s) เรียง node_id แล้ว room_no"""
-        return [(nid, room, c, s) for nid in sorted(self.ring.nodes)
-                for room, c, s in self.registry.list_guests_in_building(nid)]
-
-    def add_building(self, node_id: str) -> MigrationReport:
-        k = self.guest_count()
-        t0 = time.perf_counter()
-        if not self.ring.add_node(node_id):
-            return _report(False, f"ปฏิเสธ: อาคาร {node_id} มีอยู่แล้ว", [], k)
-        t1 = time.perf_counter()
-        moves = []            # แบบ ก: ตรวจแขกทุกคน
-        for c, s in self.registry.all_guest_codes():
-            rec = self.registry.by_guest_code[(c, s)]
-            new = self._node_of(c, s)
-            if new != rec.node_id:
-                moves.append(MigrationRecord(c, s, rec.node_id, new, rec.room_no))
-        t2 = time.perf_counter()
-        for m in moves:
-            self.registry.update_node_of_guest(m.c, m.s, m.new_node_id)
-        t3 = time.perf_counter()
-        self.last_timing = {"ring_s": t1 - t0, "find_s": t2 - t1, "update_s": t3 - t2}
-        return _report(True, "สำเร็จ (Consistent Hashing)", moves, k)
-
-    def remove_building(self, node_id: str) -> MigrationReport:
-        k = self.guest_count()
-        if node_id not in self.ring.nodes:
-            return _report(False, f"ปฏิเสธ: ไม่มีอาคาร {node_id}", [], k)
-        if self.ring.node_count() == 1:
-            return _report(False, "ปฏิเสธ: ห้ามลบอาคารสุดท้าย", [], k)
-        ta = time.perf_counter()
-        victims = self.registry.list_guests_in_building(node_id)   # ต้องรู้ก่อนลบจุดออก
-        tb = time.perf_counter()
-        self.ring.remove_node(node_id)
-        tc = time.perf_counter()
-        moves = [MigrationRecord(c, s, node_id, self._node_of(c, s), room) for room, c, s in victims]
-        td = time.perf_counter()
-        for m in moves:
-            self.registry.update_node_of_guest(m.c, m.s, m.new_node_id)
-        te = time.perf_counter()
-        self.last_timing = {"ring_s": tc - tb, "find_s": (tb - ta) + (td - tc), "update_s": te - td}
-        return _report(True, "สำเร็จ (Consistent Hashing)", moves, k)
-
-    def building_loads(self) -> dict[str, int]:
-        loads = {nid: 0 for nid in self.ring.nodes}
-        for rec in self.registry.by_guest_code.values():
-            loads[rec.node_id] += 1
-        return loads
+        super().__init__(initial_node_ids, v, salt=salt)
 
 
 # ---------- เครื่องมือวัดผล ----------
@@ -278,9 +155,11 @@ def timed(fn, *args, **kwargs):
 def measure_memory(fn, *args, **kwargs):
     """helper: วัดหน่วยความจำด้วย tracemalloc คืน (ผลลัพธ์, current_mib, peak_mib)"""
     tracemalloc.start()
-    result = fn(*args, **kwargs)
-    current, peak = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
+    try:
+        result = fn(*args, **kwargs)
+        current, peak = tracemalloc.get_traced_memory()
+    finally:
+        tracemalloc.stop()
     mib = 1024 * 1024
     return result, current / mib, peak / mib
 
@@ -471,7 +350,7 @@ def _finish(fig, axes, title, rows, out_path):
                  fontsize=12)
     fig.tight_layout()
     fig.savefig(out_path, dpi=150)
-    fig.clf()
+    _plt().close(fig)
 
 
 def plot_time_vs_k(results, out_path="time_vs_k.png"):
@@ -556,3 +435,65 @@ def export_experiment_csv(path: str, results) -> None:
         writer.writeheader()
         for r in rows:
             writer.writerow({c: ("" if r.get(c) is None else r[c]) for c in columns})
+
+
+def summarize_results(results) -> list[dict]:
+    """มัธยฐานและ min/max ข้าม salt ของชุดพารามิเตอร์เดียวกัน."""
+    groups = {}
+    keys = ("experiment", "K", "N", "V", "method", "op")
+    for row in results:
+        groups.setdefault(tuple(row.get(k) for k in keys), []).append(row)
+    summaries = []
+    for group, rows in groups.items():
+        summary = {key: value for key, value in zip(keys, group) if value is not None}
+        summary.update(rounds=len(rows), salts=",".join(str(r["salt"]) for r in rows))
+        for metric in rows[0]:
+            values = [r.get(metric) for r in rows]
+            if (metric not in keys + ("round", "salt") and
+                    all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in values)):
+                summary[metric + "_median"] = statistics.median(values)
+                summary[metric + "_min"] = min(values)
+                summary[metric + "_max"] = max(values)
+        summaries.append(summary)
+    return summaries
+
+
+def main():
+    """python experiments.py --output results สร้างหลักฐานทั้ง A/B/C."""
+    import argparse
+    import json
+    import platform
+    import sys
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description="Run required A/B/C experiments (salts 0,1,2)")
+    parser.add_argument("--output", default="results", help="โฟลเดอร์ CSV/JSON/กราฟ")
+    args = parser.parse_args()
+    out = Path(args.output)
+    out.mkdir(parents=True, exist_ok=True)
+    results = {}
+    for name, fn, values in [("A", run_experiment_A, [1000, 10000, 100000]),
+                             ("B", run_experiment_B, [5, 10, 20]),
+                             ("C", run_experiment_C, [1, 8, 32])]:
+        results[name] = fn(values)
+        export_experiment_csv(str(out / f"experiment_{name}.csv"), results[name])
+        print(f"{name}: {len(results[name])} rows", flush=True)
+    rows = [r for group in results.values() for r in group]
+    export_experiment_csv(str(out / "experiment_summary.csv"), summarize_results(rows))
+    (out / "experiments.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
+    (out / "environment.json").write_text(json.dumps({
+        "python": sys.version, "platform": platform.platform(), "salts": [0, 1, 2],
+        "search_batch": SEARCH_BATCH, "memory": "Python tracemalloc, current/peak MiB; separate run",
+    }, indent=2), encoding="utf-8")
+    try:
+        for name, plot in [("A", plot_time_vs_k), ("B", plot_migration_rate_vs_n), ("C", plot_v_effect)]:
+            plot(results[name], str(out / f"experiment_{name}.png"))
+    except ModuleNotFoundError as error:
+        print(f"บันทึกผลแล้ว แต่สร้างกราฟไม่ได้: {error}; ติดตั้ง requirements.txt", file=sys.stderr)
+        return 1
+    print(f"บันทึก CSV/JSON/กราฟครบที่ {out.resolve()}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

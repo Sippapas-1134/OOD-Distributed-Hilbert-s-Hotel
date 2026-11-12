@@ -1,0 +1,37 @@
+test_add_building_displays_migration_details (__main__.CliSpec.test_add_building_displays_migration_details) ... ok
+test_empty_guest_report_displays_all_buildings (__main__.CliSpec.test_empty_guest_report_displays_all_buildings) ... ok
+test_initialization_accepts_channel_counts (__main__.CliSpec.test_initialization_accepts_channel_counts) ... ok
+test_invalid_csv_path_does_not_crash (__main__.CliSpec.test_invalid_csv_path_does_not_crash) ... ok
+test_malformed_guest_pair_does_not_crash (__main__.CliSpec.test_malformed_guest_pair_does_not_crash) ... ok
+test_malformed_search_pair_does_not_crash (__main__.CliSpec.test_malformed_search_pair_does_not_crash) ... ok
+test_normal_create_add_find_remove_exit (__main__.CliSpec.test_normal_create_add_find_remove_exit) ... ok
+test_operating_before_initialization_does_not_crash (__main__.CliSpec.test_operating_before_initialization_does_not_crash) ... ok
+test_repeated_spaces_in_buildings_accepted (__main__.CliSpec.test_repeated_spaces_in_buildings_accepted) ... ok
+test_repeated_spaces_in_guest_pair_accepted (__main__.CliSpec.test_repeated_spaces_in_guest_pair_accepted) ... ok
+test_reset_clears_old_migration_report (__main__.CliSpec.test_reset_clears_old_migration_report) ... ok
+test_zero_count_accepted_as_no_change (__main__.CliSpec.test_zero_count_accepted_as_no_change) ... ok
+test_batch_overlap_preserves_whole_state (__main__.CoreSpec.test_batch_overlap_preserves_whole_state) ... ok
+test_batch_zero_and_negative (__main__.CoreSpec.test_batch_zero_and_negative) ... ok
+test_csv_guest_roundtrip (__main__.CoreSpec.test_csv_guest_roundtrip) ... ok
+test_csv_migration_roundtrip (__main__.CoreSpec.test_csv_migration_roundtrip) ... ok
+test_hash_stable_across_processes (__main__.CoreSpec.test_hash_stable_across_processes) ... ok
+test_invalid_guest_codes_rejected (__main__.CoreSpec.test_invalid_guest_codes_rejected) ... ok
+test_multiple_migrations_preserve_indexes_and_rooms (__main__.CoreSpec.test_multiple_migrations_preserve_indexes_and_rooms) ... ok
+test_new_guests_keep_all_existing_addresses (__main__.CoreSpec.test_new_guests_keep_all_existing_addresses) ... ok
+test_readd_guest_uses_current_ring (__main__.CoreSpec.test_readd_guest_uses_current_ring) ... ok
+test_room_formula_and_unique_addresses (__main__.CoreSpec.test_room_formula_and_unique_addresses) ... ok
+test_zero_guests_reports (__main__.CoreSpec.test_zero_guests_reports) ... ok
+test_experiment_rows_and_invariants (__main__.ExperimentSpec.test_experiment_rows_and_invariants) ... ok
+test_mod_remove_counts_real_building_ids (__main__.ExperimentSpec.test_mod_remove_counts_real_building_ids) ... ok
+test_salt_changes_positions (__main__.ExperimentSpec.test_salt_changes_positions) ... ok
+test_same_guest_hash_for_both_methods (__main__.ExperimentSpec.test_same_guest_hash_for_both_methods) ... ok
+test_cv_is_standard_deviation_over_mean (__main__.ReportingDefects.test_cv_is_standard_deviation_over_mean) ... ok
+test_empty_initial_buildings_rejected (__main__.ReportingDefects.test_empty_initial_buildings_rejected) ... ok
+test_negative_virtual_nodes_rejected (__main__.ReportingDefects.test_negative_virtual_nodes_rejected) ... ok
+test_room_listing_sorted_by_node_then_numeric_room (__main__.ReportingDefects.test_room_listing_sorted_by_node_then_numeric_room) ... ok
+test_zero_virtual_nodes_rejected (__main__.ReportingDefects.test_zero_virtual_nodes_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 32 tests in 0.599s
+
+OK

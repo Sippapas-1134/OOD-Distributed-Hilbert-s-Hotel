@@ -33,17 +33,10 @@ hashring.py
 - ทดสอบกรณีจุดชนกัน
 """
 
-"""
-ไม่แน่
-                    worse       avg         expect
-hash_to_position    O(1)        O(1)        O(1)
-add_node            O(NV²)      O(NV²)      O(NV²)
-remove_node         O(N + M)    O(M)        O(M)
-get_owner           O(log M)    O(log M)    O(log M)
-get_owner_of_guest  O(log M)    O(log M)    O(log M)
-node_count          O(1)        O(1)        O(1)
-point_count         O(1)        O(1)        O(1)
-"""
+# สมมติขนาดรหัสคงที่: hash O(1), lookup O(log(M+1)).
+# add_node แทรก V จุดใน list: O(V(M+V)) กรณีเลวร้าย;
+# remove_node กรอง M จุด: O(M); dict/set ใช้ O(1) เฉลี่ย.
+
 
 import hashlib
 from bisect import bisect_left, insort
@@ -67,8 +60,13 @@ def hash_to_position(key: str) -> int:  #O(1)
 
 class HashRing:
 
-    def __init__(self, num_virtual_nodes_per_building: int):
+    def __init__(self, num_virtual_nodes_per_building: int, salt: str | None = None):
+        if (not isinstance(num_virtual_nodes_per_building, int)
+                or isinstance(num_virtual_nodes_per_building, bool)
+                or num_virtual_nodes_per_building < 1):
+            raise ValueError("V ต้องเป็นจำนวนเต็มบวก")
         self.v = num_virtual_nodes_per_building
+        self.salt = None if salt is None else str(salt)
         self.points: list[tuple[int, str, int]] = []  #เก็บจุดทั้งหมด(len(self.points) == M) ประกอบด้วย position(key ที่ผ่านการ hash),node_id,j
         self.nodes: set[str] = set() #เก็บอาคาร(node_id) len(self.nodes) == N
 
@@ -79,6 +77,8 @@ class HashRing:
         ต้องแทรกจุดใหม่โดยรักษาลำดับของ self.points ไว้เสมอ (ใช้ insort หรือ bisect_left เอง)
         """
 
+        if not self.valid_node_id(node_id):
+            return False
         if node_id not in self.nodes: #ตรวจสอบว่าเคยมี node_id นี้หรือไม่ 
             self.nodes.add(node_id)
         else:
@@ -86,13 +86,21 @@ class HashRing:
 
         #add position node_id and j
         for j in range(self.v):     # O(v)
-            position = hash_to_position(f"node:{node_id}:{j}")
+            position = self._hash_key(f"node:{node_id}:{j}")
             point = (position, node_id, j)
             insort(self.points,point) # O(M)
 
         return True
 
-    def remove_node(self, node_id: str) -> bool: #O(N+M)
+    @staticmethod
+    def valid_node_id(node_id: str) -> bool:
+        return isinstance(node_id, str) and bool(node_id) and not any(ch.isspace() for ch in node_id)
+
+    def _hash_key(self, key: str) -> int:
+        # None รักษา hash ปกติ; การทดลองเติม salt แบบเดียวกันทั้งสองวิธี
+        return hash_to_position(key if self.salt is None else f"{key}:{self.salt}")
+
+    def remove_node(self, node_id: str) -> bool: # O(M), set lookup/remove เฉลี่ย O(1)
         """
         ลบอาคาร node_id พร้อม virtual node ทั้งหมดของอาคารนั้น
         คืนค่า True ถ้าลบสำเร็จ
@@ -100,8 +108,8 @@ class HashRing:
         ห้ามเปลี่ยนตำแหน่งจุดของอาคารอื่นที่เหลืออยู่
         """
 
-        if node_id in self.nodes and len(self.nodes)>1:
-            self.nodes.remove(node_id)  #O(N)
+        if self.valid_node_id(node_id) and node_id in self.nodes and len(self.nodes)>1:
+            self.nodes.remove(node_id)  # O(1) เฉลี่ย
 
             #ลบตัวที่มี node_id
             self.points = [i for i in self.points if i[1]!=node_id] #O(M)
@@ -109,16 +117,16 @@ class HashRing:
         else:
             return False
 
-    def get_owner(self, position: int) -> str | None: #O(log M)
+    def get_owner(self, position: int) -> tuple[int, str, int] | None: #O(log M)
         """
-        หา node_id ที่เป็นเจ้าของตำแหน่ง position
+        คืนจุด (position, node_id, j) ที่เป็นเจ้าของตำแหน่ง position
         กติกา: จุดแรกที่ position(จุด) >= position(แขก) ถ้าไม่มีให้วนกลับจุดแรกของวงแหวน (index 0)
         คืนค่า None ถ้าวงแหวนว่าง (ไม่ควรเกิดขึ้นถ้ารักษา N >= 1 ไว้เสมอ)
         แนะนำใช้ bisect_left บน list ของ position ล้วน ๆ (แยกเก็บหรือ derive ทุกครั้งก็ได้
         แต่ให้คำนึงถึง Big-O ตามที่จะวิเคราะห์ในรายงาน)
         """
 
-        if self.node_count() == 0:
+        if not self.points:
             return None
 
         #หา position ของจุดที่ >= position ของ gusest
@@ -129,13 +137,13 @@ class HashRing:
         
         return self.points[index]
 
-    def get_owner_of_guest(self, c: int, s: int) -> str | None: #O(log M)
+    def get_owner_of_guest(self, c: int, s: int) -> tuple[int, str, int] | None: #O(log M)
         """
         คำนวณตำแหน่งของแขกจาก (c, s) ด้วย hash_to_position("guest:c:s")
         แล้วเรียก get_owner() ต่อ
         """
 
-        position = hash_to_position(f"guest:{c}:{s}")   #O(1)
+        position = self._hash_key(f"guest:{c}:{s}")   #O(1) เมื่อขนาดรหัสคงที่
         return self.get_owner(position) #O(log M)
 
     # จำนวนอาคาร N
