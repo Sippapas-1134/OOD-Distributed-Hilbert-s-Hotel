@@ -170,7 +170,6 @@ def run_cli():
                 channels = {c: _read_int(f"จำนวนแขกช่องทาง {c} (เริ่ม s=1): ", "จำนวนแขก", 0)
                             for c in range(1, channel_count + 1)}
                 candidate.init_guests(channels)
-                # เปลี่ยนระบบเมื่อสร้างครบสำเร็จเท่านั้น; input ผิดไม่ทำข้อมูลเก่าหาย
                 system = candidate
                 migration_report = None
                 print(f"สร้างระบบสำเร็จ N={len(nodes)}, V={v}, แขกทั้งหมด {system.guest_count()} คน")
