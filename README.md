@@ -10,11 +10,11 @@
 ใช้ Python 3.10 ขึ้นไป; ทดสอบการทำงานจริงบน Python 3.13.9.
 ส่วนหลักใช้ standard library; matplotlib ใช้สร้างกราฟเท่านั้น.
 
-รันคำสั่งจากโฟลเดอร์นี้ (โฟลเดอร์ที่มี main.py):
+รันคำสั่งจากโฟลเดอร์นี้ (โฟลเดอร์ที่มี Distributed_Hilbert’s_Hotel.py):
 
 ```powershell
 python -m pip install -r requirements.txt
-python -X utf8 main.py
+python -X utf8 "Distributed_Hilbert’s_Hotel.py"
 ```
 
 ไฟล์ Distributed_Hilbert’s_Hotel.py เป็นทางเข้าชื่อเดิมและเรียกเมนูเดียวกัน.
@@ -47,7 +47,7 @@ python -X utf8 -m unittest discover -s . -p "test_*.py" -v
 
 มีเทสสูตรห้อง, ดัชนีสองทาง, วงแหวนตัวอย่างในโจทย์, collision/wraparound,
 การย้ายที่ V>1, ปฏิเสธคำสั่งโดยไม่เปลี่ยนข้อมูล, CV, การเรียง, initialization,
-เมนู input ผิด, reset, CSV และการเรียก main.py จริง.
+เมนู input ผิด, reset, CSV และการเรียก Distributed_Hilbert’s_Hotel.py จริง.
 test_system_regressions.py เป็น regression tests สำหรับปัญหาที่พบในการตรวจโครงงาน.
 
 ## ทดลองและสร้างกราฟ
@@ -77,7 +77,7 @@ ConsistentHashSystem ใน experiments.py สืบทอด HotelSystem แล
 | guest.py | GuestRecord, Cantor pairing, ดัชนีรหัสแขกและที่อยู่ห้อง |
 | rebalance.py | รายการย้ายและเวลาแยกปรับวงแหวน/หาแขก/อัปเดต |
 | hotel_system.py | HotelSystem และ text menu |
-| main.py | จุดเริ่มต้น |
+| Distributed_Hilbert’s_Hotel.py | จุดเริ่มต้น |
 | experiments.py | ModHashSystem และการทดลอง/CSV/กราฟ |
 | test_*.py | ทดสอบอัตโนมัติ |
 | TECHNICAL_REPORT.md | แบบข้อมูล หลักการคำนวณ Big-O และข้อจำกัด |
