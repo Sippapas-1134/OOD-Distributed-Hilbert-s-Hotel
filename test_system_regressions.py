@@ -186,7 +186,7 @@ class TestMenuRegressions(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "guests.csv"
             inputs = ["1", "A", "8", "1", "5", "9", "1", str(path), "0"]
-            result = subprocess.run([sys.executable, "-X", "utf8", str(project / "main.py")],
+            result = subprocess.run([sys.executable, "-X", "utf8", str(project / "Distributed_Hilbert’s_Hotel.py")],
                                     input="\n".join(inputs) + "\n", text=True, encoding="utf-8",
                                     capture_output=True, cwd=project, timeout=10)
             self.assertEqual(result.returncode, 0, result.stderr)
