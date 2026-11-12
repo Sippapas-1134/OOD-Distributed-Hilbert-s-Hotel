@@ -5,9 +5,6 @@ tracemalloc รอบแยก, CSV ทุกแถว และกราฟม�
 เรียก python experiments.py --output results เพื่อสร้างหลักฐานครบชุด.
 """
 
-# ConsistentHashSystem เรียก HotelSystem จริง และใช้ salt เดียวกับ ModHashSystem
-# เวลาหน่วยวินาที (_s)  หน่วยความจำหน่วย MiB (_mib) เป็นส่วนที่ Python ติดตามด้วย tracemalloc
-
 import csv
 import gc
 import random
@@ -20,10 +17,9 @@ from guest import compute_room_no
 from hotel_system import HotelSystem
 from rebalance import MigrationRecord, MigrationReport
 
-SEARCH_BATCH = 1000   # วัดการค้นหาเป็นชุด 1,000 ครั้ง แล้วหารต่อครั้ง
+SEARCH_BATCH = 1000
 
 
-# ---------- ข้อมูลทดลอง ----------
 
 def make_node_ids(n: int) -> list[str]:
     return [f"B{i:02d}" for i in range(1, n + 1)]
@@ -56,7 +52,6 @@ def check_move_rule(report: MigrationReport, op: str, node_id: str) -> bool:
     return all(m.old_node_id == node_id for m in report.moves)
 
 
-# ---------- ระบบที่ 1: hash mod N ----------
 
 class ModHashSystem:
     """ระบบเทียบเคียงด้วยวิธี hash mod N (ดูรายละเอียดในหัวข้อ 7.1 ของโจทย์)"""
@@ -67,7 +62,6 @@ class ModHashSystem:
                 or len(set(self.node_ids)) != len(self.node_ids)):
             raise ValueError("ต้องมีอาคารอย่างน้อย 1 แห่ง รหัสต้องถูกต้องและไม่ซ้ำ")
         self.salt = str(salt)
-        # เก็บ mapping (c,s) -> node_id ปัจจุบัน เพื่อคำนวณจำนวนคนย้ายด้วยรหัสอาคารจริง
         self.guest_to_node: dict[tuple[int, int], str] = {}
         self.last_timing = {"ring_s": 0.0, "find_s": 0.0, "update_s": 0.0}
 
@@ -117,7 +111,7 @@ class ModHashSystem:
             return _report(False, f"ปฏิเสธ: ไม่มีอาคาร {node_id}", [], self.guest_count())
         if len(self.node_ids) == 1:
             return _report(False, "ปฏิเสธ: ห้ามลบอาคารสุดท้าย", [], self.guest_count())
-        return self._change(self.node_ids.remove, node_id)  # รักษาลำดับที่เหลือ
+        return self._change(self.node_ids.remove, node_id)
 
     def building_loads(self) -> dict[str, int]:
         loads = {nid: 0 for nid in self.node_ids}
@@ -125,8 +119,6 @@ class ModHashSystem:
             loads[nid] += 1
         return loads
 
-
-# ---------- ระบบที่ 2: Consistent Hashing ----------
 
 class SaltedHashRing(HashRing):
     """วงแหวนจริงพร้อม salt สำหรับสร้างตำแหน่งซ้ำได้."""
@@ -141,8 +133,6 @@ class ConsistentHashSystem(HotelSystem):
     def __init__(self, initial_node_ids: list[str], v: int, salt: str = ""):
         super().__init__(initial_node_ids, v, salt=salt)
 
-
-# ---------- เครื่องมือวัดผล ----------
 
 def timed(fn, *args, **kwargs):
     """helper: จับเวลาการทำงานของฟังก์ชันด้วย perf_counter คืน (ผลลัพธ์, วินาที)"""
@@ -194,8 +184,6 @@ def _build_ring_only(n, v, salt) -> SaltedHashRing:
     return ring
 
 
-# ---------- การทดลอง (คืน list ของ dict หนึ่งแถวต่อ 1 รอบการวัด) ----------
-
 def run_experiment_A(k_values, n=10, v=32, salts=(0, 1, 2)):
     """ทดลอง A: ผลของขนาดข้อมูล K ต่อเวลาและหน่วยความจำ"""
     rows = []
@@ -216,8 +204,6 @@ def run_experiment_A(k_values, n=10, v=32, salts=(0, 1, 2)):
 
             gc.collect()
             rooms, t_list = timed(system.list_occupied_rooms)
-
-            # รอบวัดหน่วยความจำแยกจากรอบจับเวลา
             _, mem_cur, mem_peak = measure_memory(_build_ch, n, v, salt, k)
             rows.append({
                 "experiment": "A", "round": rnd, "salt": salt, "K": k, "N": n, "V": v,
@@ -294,8 +280,6 @@ def run_experiment_C(v_values, n=10, k=10_000, salts=(0, 1, 2)):
     return rows
 
 
-# ---------- กราฟ ----------
-
 BLUE, ORANGE, GREEN = "#0072B2", "#D55E00", "#009E73"
 
 
@@ -308,7 +292,7 @@ def _plt():
     for name in ("Tahoma", "Leelawadee UI", "Noto Sans Thai", "Sarabun", "TH Sarabun New",
                  "Thonburi", "Loma", "Garuda", "Angsana New", "Arial Unicode MS"):
         if name in have:
-            plt.rcParams["font.family"] = name   # ต้องใช้ฟอนต์ที่มีอักษรไทย
+            plt.rcParams["font.family"] = name
             break
     plt.rcParams["axes.unicode_minus"] = False
     plt.rcParams["mathtext.fontset"] = "dejavusans"
@@ -341,7 +325,7 @@ def _finish(fig, axes, title, rows, out_path):
         for side in ("top", "right"):
             ax.spines[side].set_visible(False)
         for axis in (ax.xaxis, ax.yaxis):
-            if axis.get_scale() == "log":   # ป้ายตัวเลขธรรมดา เลี่ยงเลขชี้กำลังติดลบ
+            if axis.get_scale() == "log":
                 axis.set_major_formatter(FuncFormatter(lambda val, _: f"{val:g}"))
                 axis.set_minor_formatter(NullFormatter())
         ax.legend(frameon=False, fontsize=9)
@@ -419,8 +403,6 @@ def plot_v_effect(results, out_path="v_effect.png"):
     _finish(fig, (a1, a2), f"ทดลอง C: ผลของจำนวน virtual node V   (N={results[0]['N']}, K={results[0]['K']:,})",
             results, out_path)
 
-
-# ---------- CSV ----------
 
 def export_experiment_csv(path: str, results) -> None:
     """เขียน CSV (UTF-8) ทุกแถวที่วัดได้ พร้อมพารามิเตอร์ K, N, V, salt, รอบที่

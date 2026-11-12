@@ -95,7 +95,7 @@ class TestCsvExport(unittest.TestCase):
 
             with open(path, mode="r", newline="", encoding="utf-8") as file:
                 reader = csv.reader(file)
-                _ = next(reader, None) # header
+                _ = next(reader, None)
                 self.assertEqual(sum(1 for _ in reader), self.system.registry.guest_count())
 
 

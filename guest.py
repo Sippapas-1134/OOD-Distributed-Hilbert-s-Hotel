@@ -18,7 +18,6 @@ from dataclasses import dataclass
 
 
 def _is_pos_int(x) -> bool:
-    # bool เป็น subclass ของ int จึงต้องกันออกเอง
     return isinstance(x, int) and not isinstance(x, bool) and x >= 1
 
 
@@ -48,7 +47,6 @@ class GuestRegistry:
         self.by_guest_code: dict[tuple[int, int], GuestRecord] = {}
         self.by_address: dict[tuple[str, int], tuple[int, int]] = {}
 
-    # ---------- เพิ่ม ----------
     def add_guest(self, c: int, s: int, node_id: str) -> tuple[bool, str]:
         """
         คืน (True, "") ถ้าสำเร็จ
@@ -78,22 +76,15 @@ class GuestRegistry:
             return False, f"c={c!r}, s_start={s_start!r} ต้องเป็นจำนวนเต็มบวก", []
 
         codes = [(c, s) for s in range(s_start, s_start + count)]
-
-        # 1) ตรวจซ้ำทั้งกลุ่มก่อน
         dups = [code for code in codes if code in self.by_guest_code]
         if dups:
             shown = ", ".join(f"({a},{b})" for a, b in dups[:5])
             more = f" และอีก {len(dups) - 5} รายการ" if len(dups) > 5 else ""
             return False, f"ปฏิเสธทั้งกลุ่ม: ซ้ำกับแขกที่มีอยู่แล้ว {shown}{more}", []
-
-        # 2) ถาม node_id ของทุกคนก่อนแก้ข้อมูล
-        #    (ถ้า lookup ล้มเหลวกลางทาง registry จะยังไม่ถูกแก้เลย)
         try:
             plan = [(cc, ss, node_id_lookup_fn(cc, ss)) for cc, ss in codes]
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             return False, f"หาอาคารของแขกไม่สำเร็จ ไม่มีการเปลี่ยนแปลง: {e}", []
-
-        # 3) เพิ่มจริง
         for cc, ss, nid in plan:
             self._insert(cc, ss, nid)
         return True, "", codes
@@ -103,7 +94,6 @@ class GuestRegistry:
         self.by_guest_code[(c, s)] = GuestRecord(c, s, node_id, room_no)
         self.by_address[(node_id, room_no)] = (c, s)
 
-    # ---------- ลบ ----------
     def remove_guest(self, c: int, s: int) -> tuple[bool, str]:
         if not _is_pos_int(c) or not _is_pos_int(s):
             return False, "c และ s ต้องเป็นจำนวนเต็มบวก"
@@ -113,7 +103,6 @@ class GuestRegistry:
         self.by_address.pop((rec.node_id, rec.room_no), None)
         return True, ""
 
-    # ---------- ค้นหา ----------
     def find_by_guest_code(self, c: int, s: int):
         """คืน (node_id, room_no) หรือ None"""
         if not _is_pos_int(c) or not _is_pos_int(s):
@@ -129,7 +118,6 @@ class GuestRegistry:
             return None
         return self.by_address.get((node_id, room_no))
 
-    # ---------- ย้ายอาคาร ----------
     def update_node_of_guest(self, c: int, s: int, new_node_id: str) -> None:
         """ใช้ตอนย้ายอาคาร room_no คงเดิม เปลี่ยนแค่ node_id เรียกจากตอนเพิ่ม/ลบอาคาร
         ถ้าไม่พบแขกจะ raise KeyError (เป็นความผิดพลาดของผู้เรียก ไม่ควรเกิดในการใช้งานปกติ)"""
@@ -142,7 +130,6 @@ class GuestRegistry:
         rec.node_id = new_node_id
         self.by_address[(new_node_id, rec.room_no)] = (c, s)
 
-    # ---------- รายการ ----------
     def list_guests_in_building(self, node_id: str) -> list[tuple[int, int, int]]:
         """คืน list ของ (room_no, c, s) เรียงตาม room_no จากน้อยไปมาก"""
         result = [
