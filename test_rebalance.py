@@ -25,6 +25,7 @@ class RebalanceTestCase(unittest.TestCase):
         }
 
     def snapshot(self):
+        # ต้องสำเนา GuestRecord ด้วย เพราะการย้ายแก้ object เดิม
         return deepcopy((
             self.ring.points, self.ring.nodes, self.ring.v,
             self.registry.by_guest_code, self.registry.by_address,
@@ -37,6 +38,7 @@ class RebalanceTestCase(unittest.TestCase):
         self.assertEqual(self.registry.guest_count(), len(before))
         self.assertEqual(len(self.registry.by_address), len(before))
 
+        # หาผู้ย้ายจากข้อมูลก่อน/หลังอย่างอิสระ แล้วเทียบกับรายงาน
         changed = {code for code in before if before[code][0] != after[code][0]}
         self.assertEqual(report.moved_count, len(changed))
         self.assertEqual(len(report.moves), len(changed))
@@ -73,6 +75,7 @@ class RebalanceTestCase(unittest.TestCase):
 
 class TestRebalanceWithSpecExample(RebalanceTestCase):
     def setUp(self):
+        # จำลองเฉพาะค่าแฮช ส่วน HashRing และ GuestRegistry ใช้โค้ดจริง
         positions = {
             "node:A:0": 20, "node:B:0": 50,
             "node:C:0": 80, "node:D:0": 35,
@@ -164,6 +167,7 @@ class TestRebalanceEdgeCases(RebalanceTestCase):
         self.assert_rejected(rebalance.remove_building, "unknown")
 
     def test_remove_empty_building_with_guests_elsewhere(self):
+        # เพิ่มอาคารใหม่ที่ไม่มีแขกตกในช่วงของมัน
         self.ring.points = [(20, "A", 0), (50, "B", 0)]
         self.ring.nodes = {"A", "B"}
         self.ring.v = 1
@@ -181,6 +185,7 @@ class TestRebalanceWithVirtualNodes(RebalanceTestCase):
         self.registry = GuestRegistry()
         for node in "ABC":
             self.ring.add_node(node)
+        # หลายช่องทาง ใช้ SHA-256 จริง และไม่สมมติจำนวนย้ายจากค่าคาดหวัง
         for c in range(1, 6):
             for s in range(1, 101):
                 ok, reason = self.registry.add_guest(c, s, self.ring.get_owner_of_guest(c, s)[1])

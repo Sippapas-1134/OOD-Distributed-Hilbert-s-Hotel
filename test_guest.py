@@ -122,10 +122,10 @@ class TestRegistry(unittest.TestCase):
         self.assertEqual(self.r.find_by_address("A", 1), (1, 1))
 
     def test_list_sorted(self):
-        self.r.add_guest(3, 1, "A")
-        self.r.add_guest(1, 1, "A")
-        self.r.add_guest(2, 2, "A")
-        self.r.add_guest(2, 1, "B")
+        self.r.add_guest(3, 1, "A")  # 4
+        self.r.add_guest(1, 1, "A")  # 1
+        self.r.add_guest(2, 2, "A")  # 5
+        self.r.add_guest(2, 1, "B")  # 2
         self.assertEqual(
             self.r.list_guests_in_building("A"), [(1, 1, 1), (4, 3, 1), (5, 2, 2)]
         )

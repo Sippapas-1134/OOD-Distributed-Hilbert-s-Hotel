@@ -23,11 +23,13 @@ def owner_id(ring, position):
 
 class TestHashToPosition(unittest.TestCase):
     def test_matches_spec(self):
+        # คำนวณตามกติกา: sha256 -> utf-8 -> 8 ไบต์แรก big-endian
         for key in ["guest:1:1", "node:A:0", "guest:999:12345", "node:ตึก:3"]:
             digest = hashlib.sha256(key.encode("utf-8")).digest()
             self.assertEqual(hash_to_position(key), int.from_bytes(digest[:8], "big"))
 
     def test_stable_constants(self):
+        # ค่าตายตัว: ถ้าเทสนี้พัง แปลว่าแฮชไม่คงที่ข้ามการรัน/เปลี่ยนวิธีแฮช
         self.assertEqual(hash_to_position("guest:1:1"), 3062031282815716176)
         self.assertEqual(hash_to_position("node:A:0"), 18050195718888941696)
 
@@ -48,10 +50,10 @@ class TestSmallRing(unittest.TestCase):
 
     def test_owner_table(self):
         expected = {
-            0: "A", 10: "A", 20: "A",
+            0: "A", 10: "A", 20: "A",   # <= 20 -> A (>= ตรงจุดพอดีได้จุดนั้น)
             21: "B", 35: "B", 50: "B",
             51: "C", 70: "C", 80: "C",
-            81: "A", 90: "A", 99: "A",
+            81: "A", 90: "A", 99: "A",  # เกินจุดสุดท้าย -> วนกลับ A
         }
         for position, node in expected.items():
             self.assertEqual(owner_id(self.ring, position), node, f"position={position}")
@@ -78,6 +80,7 @@ class TestCollision(unittest.TestCase):
     def test_same_position_sorted_by_node_id_then_j(self):
         ring = make_small_ring([(50, "B", 0), (50, "A", 1), (50, "A", 0), (80, "C", 0)])
         self.assertEqual(ring.points[:3], [(50, "A", 0), (50, "A", 1), (50, "B", 0)])
+        # จุดแรกตามลำดับ (position, node_id, j) เป็นเจ้าของ
         self.assertEqual(ring.get_owner(50), (50, "A", 0))
         self.assertEqual(ring.get_owner(30), (50, "A", 0))
         self.assertEqual(ring.get_owner(51), (80, "C", 0))
@@ -153,7 +156,7 @@ class TestAddRemove(unittest.TestCase):
         snapshot = list(ring.points)
         ring.remove_node("C")
         ring.add_node("C")
-        self.assertEqual(ring.points, snapshot)
+        self.assertEqual(ring.points, snapshot)  # แฮชคงที่ -> วงแหวนเหมือนเดิม
 
 
 class TestRealRing(unittest.TestCase):
@@ -176,7 +179,7 @@ class TestRealRing(unittest.TestCase):
                 self.assertIn(ring.get_owner_of_guest(c, s)[1], ring.nodes)
 
     def test_deterministic_across_instances(self):
-        r1, r2 = self.build("ABC"), self.build("CBA")
+        r1, r2 = self.build("ABC"), self.build("CBA")  # ลำดับเพิ่มต่างกัน ผลต้องเหมือนกัน
         self.assertEqual(r1.points, r2.points)
         for c in range(1, 30):
             self.assertEqual(r1.get_owner_of_guest(c, 1), r2.get_owner_of_guest(c, 1))

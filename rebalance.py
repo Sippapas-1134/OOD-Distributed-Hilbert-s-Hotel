@@ -70,14 +70,19 @@ class MigrationRecord:
 @dataclass
 class MigrationReport:
     accepted: bool
-    reason: str
+    reason: str  # เหตุผล ถ้า accepted=False, หรือคำอธิบายสั้น ๆ ถ้า accepted=True
     moved_count: int
-    move_rate: float | None
+    move_rate: float | None  # None ถ้า K == 0 (ไม่คำนวณอัตรา)
     moves: list[MigrationRecord] = field(default_factory=list)
     timings: dict[str, float] = field(default_factory=lambda: {
         "ring_s": 0.0, "find_s": 0.0, "update_s": 0.0,
     })
 
+
+# M = N*V, K = แขกทั้งหมด, R = ผู้ย้าย; ถือว่ารหัสมีขนาดคงที่ และ dict/set เฉลี่ย O(1)
+# a) ปรับวงแหวน: O(V*M) (แทรก V จุด; N >= 1 จึง M + V <= 2M)
+# b) หาแขกที่ได้รับผลกระทบ: O(K*log(M+1))
+# c) อัปเดตดัชนี: O(1) เฉลี่ยต่อคน รวม O(R)
 def add_building(ring, registry, node_id: str) -> MigrationReport:
     """
     ring: instance ของ hashring.HashRing (คนที่ 1)
@@ -127,6 +132,10 @@ def add_building(ring, registry, node_id: str) -> MigrationReport:
         timings={"ring_s": t1 - t0, "find_s": t2 - t1, "update_s": t3 - t2},
     )
 
+
+# a) ปรับวงแหวน: O(M)
+# b) หาแขก: O(K + R*log(R+1) + R*log(M+1)) (สแกนทั้งหมด เรียง และหาอาคารใหม่)
+# c) อัปเดตดัชนี: O(1) เฉลี่ยต่อคน รวม O(R)
 def remove_building(ring, registry, node_id: str) -> MigrationReport:
     """เหมือน add_building แต่เป็นการลบอาคาร ดูขั้นตอน 2) ใน docstring ด้านบน"""
 
